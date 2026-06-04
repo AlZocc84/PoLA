@@ -124,7 +124,7 @@ program pore_local_analysis
 
 ! Loop on the void points
  open(1,file='distance.txt',status='unknown',form='formatted')
- write(1,'("# Index    XCub  YCub  ZCub   MinD")') iP, XCub, YCub, ZCub
+ write(1,'("# Index    XCub  YCub  ZCub   MinD")')
  do iP = 1, nP
 
    if(IndCav(iP).eq.1) then
