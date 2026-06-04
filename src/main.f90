@@ -175,7 +175,7 @@ program pore_local_analysis
    ZCub = INT(iC/iM2) + 1
    YCub = INT(MOD(iC,iM2)/nR(1)) + 1
    XCub = MOD(MOD(iC,iM2),nR(1)) + 1
-   write(1,'(" ",i7,"   ",i3,"   ",i3,"   ",i3,"   ",f4.2)') iP, XCub, YCub, ZCub, DistMin(iP)
+   write(1,'(" ",i7,"   ",i3,"   ",i3,"   ",i3,"   ",f8.4)') iP, XCub, YCub, ZCub, DistMin(iP)
 
 ! If RMax falls below a given threshold this is considered a "closed" pore, inaccessible
 ! by adsorbates, then this block becomes "filled" and is not considered in the porous volume analysis
