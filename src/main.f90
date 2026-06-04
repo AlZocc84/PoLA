@@ -123,8 +123,19 @@ program pore_local_analysis
  v_block = dMesh*dMesh*dMesh
 
 ! Loop on the void points
+ open(1,file='distance.txt',status='unknown',form='formatted')
+ write(1,'("# Index    XCub  YCub  ZCub   MinD)') iP, XCub, YCub, ZCub
  do iP = 1, nP
-   if(IndCav(iP).eq.1) cycle
+
+   if(IndCav(iP).eq.1) then
+     iC = iP - 1
+     ZCub = INT(iC/iM2) + 1
+     YCub = INT(MOD(iC,iM2)/nR(1)) + 1
+     XCub = MOD(MOD(iC,iM2),nR(1)) + 1
+     write(1,'(" ",i7,"   ",i3,"   ",i3,"   ",i3,"   -1")') iP, XCub, YCub, ZCub
+
+     cycle
+   end if
 ! RMin_temp/RMax will be the shortest/longest distances between opposite walls for this point
    RMin_temp = RMin
    RMax = Zero
@@ -160,6 +171,11 @@ program pore_local_analysis
 
 ! Save each block and its minimum distance
    DistMin(iP) = RMin_temp
+   iC = iP - 1
+   ZCub = INT(iC/iM2) + 1
+   YCub = INT(MOD(iC,iM2)/nR(1)) + 1
+   XCub = MOD(MOD(iC,iM2),nR(1)) + 1
+   write(1,'(" ",i7,"   ",i3,"   ",i3,"   ",i3,"   ",f4.2)') iP, XCub, YCub, ZCub, DistMin(iP)
 
 ! If RMax falls below a given threshold this is considered a "closed" pore, inaccessible
 ! by adsorbates, then this block becomes "filled" and is not considered in the porous volume analysis
@@ -168,7 +184,7 @@ program pore_local_analysis
      cycle
    end if
  end do
-
+ close(1)
 ! Compute skeletal density
  call Skel_Dens(dMesh,nP,IndCav,nAtm,AtmSym,SkV,SkM,SkD)
  
