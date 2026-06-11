@@ -22,6 +22,11 @@ program pore_local_analysis
  REAL(DP) :: dMesh, v_block, DiamStep, Closed_Thresh, MaxDiameter
  REAL(DP) :: SkV, SkM, SkD, Rad
 
+!---------- DEBUG_ALL_DIST_11-06-2026-----------------
+ REAL(DP), DIMENSION(:,:), ALLOCATABLE:: all_distances
+ INTEGER :: count_void, count_d
+!---------- DEBUG_ALL_DIST_11-06-2026-----------------
+
  CHARACTER(2), DIMENSION(:), ALLOCATABLE :: AtmSym
 
  LOGICAL:: Found, Accessible
@@ -118,12 +123,21 @@ program pore_local_analysis
 ! is set to 120 A, way larger than the affordable porosities...
  nVol = INT(120/DiamStep)
  allocate(Cumulative_VMinD(nVol),VMinD(nVol))
+
+!---------- DEBUG_ALL_DIST_11-06-2026-----------------
+ allocate(all_distances(nP,240))
+ all_distances = Zero
+ count_void = 0
+!---------- DEBUG_ALL_DIST_11-06-2026-----------------
+
  VMinD = Zero
  Cumulative_vMinD = Zero
  v_block = dMesh*dMesh*dMesh
 
 ! Loop on the void points
  open(1,file='distance.txt',status='unknown',form='formatted')
+ open(2,file='all_distances.txt',status='unknown',form='formatted')
+
  write(1,'("# Index    XCub  YCub  ZCub   MinD")')
  do iP = 1, nP
 
@@ -136,6 +150,12 @@ program pore_local_analysis
 
      cycle
    end if
+!---------- DEBUG_ALL_DIST_11-06-2026-----------------
+   count_void = count_void +1
+   all_distances(count_void,1) = (iP*1.0)
+   count_d = 1
+!---------- DEBUG_ALL_DIST_11-06-2026-----------------
+
 ! RMin_temp/RMax will be the shortest/longest distances between opposite walls for this point
    RMin_temp = RMin
    RMax = Zero
@@ -154,6 +174,12 @@ program pore_local_analysis
 
 ! Find the wall in this direction
        Call Find_Wall(iP,iPN,nR,dMesh,XCub,YCub,ZCub,dX,dY,dZ,IndCav,Found,RN)
+
+!---------- DEBUG_ALL_DIST_11-06-2026-----------------
+       count_d = count_d+1
+       all_distances(count_void,count_d) = RN      
+!---------- DEBUG_ALL_DIST_11-06-2026-----------------
+
        if(.not.Found) cycle
 ! Search the same line in the opposite direction
        dX = -dX       
@@ -161,6 +187,12 @@ program pore_local_analysis
        dZ = -dZ       
 ! Find the wall in this direction also
        Call Find_Wall(iP,iPNopp,nR,dMesh,XCub,YCub,ZCub,dX,dY,dZ,IndCav,Found,Ropp)
+
+!---------- DEBUG_ALL_DIST_11-06-2026-----------------
+       count_d = count_d+1
+       all_distances(count_void,count_d) = Ropp    
+!---------- DEBUG_ALL_DIST_11-06-2026-----------------
+
        if(.not.Found) cycle
 ! Find the distance between points iPN and iPNopp
        R = RN + Ropp
@@ -182,9 +214,14 @@ program pore_local_analysis
    if(RMax.gt.Zero.AND.RMax.lt.Closed_Thresh) then
      IndCav(iP) = 2
      cycle
+!---------- DEBUG_ALL_DIST_11-06-2026-----------------
+   else
+     write(2,'(i20,240(",",1x,f12.6))') int(all_distances(count_void,1)), all_distances(count_void,2:241)
+!---------- DEBUG_ALL_DIST_11-06-2026-----------------
    end if
  end do
  close(1)
+ close(2)
 ! Compute skeletal density
  call Skel_Dens(dMesh,nP,IndCav,nAtm,AtmSym,SkV,SkM,SkD)
  
