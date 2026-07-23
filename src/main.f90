@@ -73,7 +73,6 @@ program pore_local_analysis
      INTEGER, DIMENSION(:), INTENT(INOUT) :: IndCav
      INTEGER, DIMENSION(:), ALLOCATABLE, INTENT(OUT) :: SurfCenter
      REAL(DP), INTENT(IN) :: dMesh, Rad
-
    END SUBROUTINE Surface                                             
    SUBROUTINE Texture(nP,dMesh,nVol,DiamStep,VMinD,Cumulative_VMinD,UltraV,MicroV,SmallMesoV,LargeMesoV,MacroV,TotPorV, &                                   
                    surf_computation,DistMin,UltraS,MicroS,SmallMesoS,LargeMesoS,MacroS,Rad,IndCav,Surf,Accessible)
@@ -103,6 +102,9 @@ program pore_local_analysis
      REAL(DP), DIMENSION(:), INTENT(IN) :: Cumulative_VMinD, VMinD
      LOGICAL, INTENT(IN) :: Accessible
    END SUBROUTINE Output
+   SUBROUTINE Connectivity()
+   
+   END SUBROUTINE
  END INTERFACE
 
 ! Read in the mesh coordinates of the material: input, xyz file; output, 
