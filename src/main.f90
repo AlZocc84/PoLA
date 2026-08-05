@@ -7,8 +7,8 @@ program pore_local_analysis
  IMPLICIT NONE
 
  INTEGER, PARAMETER :: DP = SELECTED_REAL_KIND(14)
- INTEGER, DIMENSION(:), ALLOCATABLE :: IndCav, SurfCenter
- INTEGER :: i, iP, nP, nAtm, iPN, iPNopp, nMono_dens, n_angles, MinD
+ INTEGER, DIMENSION(:), ALLOCATABLE :: IndCav, SurfCenter, IndCon
+ INTEGER :: i, iP, nP, nAtm, iPN, iPNopp, nMono_dens, n_angles, MinD, Npore, V
  INTEGER ::  iM1, iM2, XCub, YCub, ZCub, iC, Print_xyz, nVol, nS, surf_computation
  INTEGER, DIMENSION(3) :: nR
  REAL(DP), PARAMETER :: Zero=0.0d0, One=1.0d0, Two=2.0d0, Three=3.0d0, Four=4.0d0, Six=6.0d0
@@ -20,7 +20,7 @@ program pore_local_analysis
  REAL(DP) :: UltraS, MicroS, SmallMesoS, LargeMesoS, MacroS
  REAL(DP) :: dX, dY, dZ, R, RMin, RMin_temp, RMax, RN, Ropp
  REAL(DP) :: dMesh, v_block, DiamStep, Closed_Thresh, MaxDiameter
- REAL(DP) :: SkV, SkM, SkD, Rad
+ REAL(DP) :: SkV, SkM, SkD, Rad, XX, YY, ZZ
 
 !---------- DEBUG_ALL_DIST_11-06-2026-----------------
  REAL(DP), DIMENSION(:,:), ALLOCATABLE:: all_distances
@@ -33,10 +33,10 @@ program pore_local_analysis
  REAL(DP) :: Fact
 
  INTERFACE
-   SUBROUTINE Input(dMesh,nR,nP,nAtm,AtmSym,IndCav,DiamStep,RMin,MaxDiameter,Closed_Thresh,Print_xyz, &
+   SUBROUTINE Input(dMesh,nR,nP,nAtm,AtmSym,IndCav,IndCon,DiamStep,RMin,MaxDiameter,Closed_Thresh,Print_xyz, &
                  surf_computation,Rad,n_angles,versors,Accessible)
      INTEGER, PARAMETER :: DP = SELECTED_REAL_KIND(14)
-     INTEGER, DIMENSION(:), ALLOCATABLE, INTENT(OUT) :: IndCav
+     INTEGER, DIMENSION(:), ALLOCATABLE, INTENT(OUT) :: IndCav, IndCon
      INTEGER, INTENT(OUT) :: nP, nAtm, Print_xyz, surf_computation, n_angles
      INTEGER, DIMENSION(3), INTENT(OUT) :: nR
      REAL(DP), INTENT(OUT) :: dMesh, DiamStep, RMin, Closed_Thresh, MaxDiameter, Rad
@@ -102,8 +102,11 @@ program pore_local_analysis
      REAL(DP), DIMENSION(:), INTENT(IN) :: Cumulative_VMinD, VMinD
      LOGICAL, INTENT(IN) :: Accessible
    END SUBROUTINE Output
-   SUBROUTINE Connectivity()
-   
+   SUBROUTINE Connectivity(iP,Npore,V,nR,IndCon)
+     INTEGER, DIMENSION(:), INTENT(INOUT) :: IndCon
+     INTEGER, DIMENSION(3), INTENT(IN) :: nR
+     INTEGER, INTENT(IN) :: iP, Npore
+     INTEGER, INTENT(OUT) :: V
    END SUBROUTINE
  END INTERFACE
 
@@ -111,7 +114,7 @@ program pore_local_analysis
 ! IndCav vector starts with 1 for "occupied" and 0 for void blocks
 ! and will contain a detailed classification of the void blocks (Volume and surface: <7A(ultramicro), >7 and <20 (micro), meso etc.)
 
- call Input(dMesh,nR,nP,nAtm,AtmSym,IndCav,DiamStep,RMin,MaxDiameter,Closed_Thresh,Print_xyz, &
+ call Input(dMesh,nR,nP,nAtm,AtmSym,IndCav,IndCon,DiamStep,RMin,MaxDiameter,Closed_Thresh,Print_xyz, &
                  surf_computation,Rad,n_angles,versors,Accessible)
 
  iM1 = nR(1)
@@ -215,6 +218,7 @@ program pore_local_analysis
 ! by adsorbates, then this block becomes "filled" and is not considered in the porous volume analysis
    if(RMax.gt.Zero.AND.RMax.lt.Closed_Thresh) then
      IndCav(iP) = 2
+     IndCon(iP) = -1
      cycle
 !---------- DEBUG_ALL_DIST_11-06-2026-----------------
    else
@@ -250,6 +254,33 @@ program pore_local_analysis
 !   write(5,'(i12,f14.1,e20.8)') MinD, Surf(MinD), Fact*Surf(MinD)
 ! end do
 ! close(5)
+
+! Find connectivity
+ Npore = 0
+ open(3,file='connectivity.txt',status='unknown',form='formatted')
+ do iP =1, nP
+    if(IndCon(iP).ne.0) cycle
+    Npore = Npore + 1
+    IndCon(iP) = Npore
+    call Connectivity(iP,Npore,V,nR,IndCon)
+    write(3,'("Found the pore ",i5," with volume ",i12)') Npore, V
+ end do
+ close(3)
+ open(4,file='connectivity.xyz',status='unknown',form='formatted')
+ write(4,*)nP
+   write(4,*)
+   iM2 = nR(1)*nR(2)
+   do iP = 1, nP
+     iC = iP - 1
+     ZCub = INT(iC/iM2) + 1
+     YCub = INT(MOD(iC,iM2)/nR(1)) + 1
+     XCub = MOD(MOD(iC,iM2),nR(1)) + 1
+     XX = dMesh*(XCub - 0.5)
+     YY = dMesh*((YCub + 1) - 0.5)
+     ZZ = dMesh*((ZCub + 1) - 0.5)
+     write(4,'(i5,3f12.6)')IndCon(iP),XX,YY,ZZ
+   end do
+ close(4)
 
 ! Write the results
  call Output(dMesh,nR,nP,nVol,IndCav,DiamStep,Cumulative_VMinD,VMinD,Accessible, &
