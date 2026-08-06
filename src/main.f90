@@ -8,7 +8,7 @@ program pore_local_analysis
 
  INTEGER, PARAMETER :: DP = SELECTED_REAL_KIND(14)
  INTEGER, DIMENSION(:), ALLOCATABLE :: IndCav, SurfCenter, IndCon
- INTEGER :: i, iP, nP, nAtm, iPN, iPNopp, nMono_dens, n_angles, MinD, Npore, V
+ INTEGER :: i, iP, nP, nAtm, iPN, iPNopp, nMono_dens, n_angles, MinD, Npore, V, jP
  INTEGER ::  iM1, iM2, XCub, YCub, ZCub, iC, Print_xyz, nVol, nS, surf_computation
  INTEGER, DIMENSION(3) :: nR
  REAL(DP), PARAMETER :: Zero=0.0d0, One=1.0d0, Two=2.0d0, Three=3.0d0, Four=4.0d0, Six=6.0d0
@@ -146,6 +146,10 @@ program pore_local_analysis
  write(1,'("# Index    XCub  YCub  ZCub   MinD")')
  do iP = 1, nP
 
+   ! Debug 06-08-2026
+   jP = IndCon(1)
+   ! end Debug 06-08-2026
+
    if(IndCav(iP).eq.1) then
      iC = iP - 1
      ZCub = INT(iC/iM2) + 1
@@ -155,10 +159,11 @@ program pore_local_analysis
 
      cycle
    end if
+
 !---------- DEBUG_ALL_DIST_11-06-2026-----------------
    count_void = count_void +1
    all_distances(count_void,1) = (iP*1.0)
-   count_d = 1
+   count_d = 0
 !---------- DEBUG_ALL_DIST_11-06-2026-----------------
 
 ! RMin_temp/RMax will be the shortest/longest distances between opposite walls for this point
@@ -169,6 +174,7 @@ program pore_local_analysis
    ZCub = INT(iC/iM2) + 1
    YCub = INT(MOD(iC,iM2)/iM1) + 1
    XCub = MOD(MOD(iC,iM2),iM1) + 1
+
 
 ! Scan the spherical angles around iP
    do i = 1, n_angles
@@ -193,10 +199,24 @@ program pore_local_analysis
 ! Find the wall in this direction also
        Call Find_Wall(iP,iPNopp,nR,dMesh,XCub,YCub,ZCub,dX,dY,dZ,IndCav,Found,Ropp)
 
+!---------- DEBUG_IndCon_06-08-2026-----------------
+   if (jP .ne. IndCon(1)) then
+     write(6,*) "1: value of IndCon changed!"
+   end if
+
 !---------- DEBUG_ALL_DIST_11-06-2026-----------------
        count_d = count_d+1
        all_distances(count_void,count_d) = Ropp    
 !---------- DEBUG_ALL_DIST_11-06-2026-----------------
+
+!---------- DEBUG_IndCon_06-08-2026-----------------
+   if (jP .ne. IndCon(1)) then
+     write(6,*) "2: value of IndCon changed!"
+     write(6,*) "iP", iP
+     write(6,*) "count_void, count_d = ", count_void, count_d
+     write(6,*) "Ropp", Ropp
+     write(6,*) "IndCon(1)", IndCon(1)
+   end if
 
        if(.not.Found) cycle
 ! Find the distance between points iPN and iPNopp
@@ -206,6 +226,11 @@ program pore_local_analysis
        if(R.ge.RMax) RMax = R
    end do  
 
+!---------- DEBUG_IndCon_06-08-2026-----------------
+   if (jP .ne. IndCon(1)) then
+     write(6,*) "3: value of IndCon changed!"
+   end if
+
 ! Save each block and its minimum distance
    DistMin(iP) = RMin_temp
    iC = iP - 1
@@ -214,20 +239,41 @@ program pore_local_analysis
    XCub = MOD(MOD(iC,iM2),nR(1)) + 1
    write(1,'(" ",i7,"   ",i3,"   ",i3,"   ",i3,"   ",f8.4)') iP, XCub, YCub, ZCub, DistMin(iP)
 
+!---------- DEBUG_IndCon_06-08-2026-----------------
+   if (jP .ne. IndCon(1)) then
+     write(6,*) "6: value of IndCon changed!"
+   end if
+
 ! If RMax falls below a given threshold this is considered a "closed" pore, inaccessible
 ! by adsorbates, then this block becomes "filled" and is not considered in the porous volume analysis
    if(RMax.gt.Zero.AND.RMax.lt.Closed_Thresh) then
      IndCav(iP) = 2
      IndCon(iP) = -1
      cycle
+
 !---------- DEBUG_ALL_DIST_11-06-2026-----------------
    else
-     write(2,'(i20,240(",",1x,f12.6))') int(all_distances(count_void,1)), all_distances(count_void,2:241)
+     write(2,'(i20,240(",",1x,f12.6))') int(all_distances(count_void,1)), all_distances(count_void,2:240)
 !---------- DEBUG_ALL_DIST_11-06-2026-----------------
    end if
+
+!---------- DEBUG_IndCon_06-08-2026-----------------
+   if (jP .ne. IndCon(1)) then
+     write(6,*) "7: value of IndCon changed!"
+   end if
+
  end do
  close(1)
  close(2)
+
+open(7,file='indcon_post_closedp.xyz',status='unknown',form='formatted')                                                                                                        
+ write(7,*)nP
+   write(7,*)
+   do iP = 1, nP
+     write(7,'(i13)')IndCon(iP)
+   end do
+ close(7)
+
 ! Compute skeletal density
  call Skel_Dens(dMesh,nP,IndCav,nAtm,AtmSym,SkV,SkM,SkD)
  
@@ -257,15 +303,45 @@ program pore_local_analysis
 
 ! Find connectivity
  Npore = 0
+open(7,file='indcon_pre.xyz',status='unknown',form='formatted')                                                                                                               
+ write(7,*)nP
+   write(7,*)
+   do iP = 1, nP
+     write(7,'(i13)')IndCon(iP)
+   end do
+ close(7)
+
  open(3,file='connectivity.txt',status='unknown',form='formatted')
  do iP =1, nP
     if(IndCon(iP).ne.0) cycle
+    write(3,'("IndCon(iP) at beginnig ",i5)') IndCon(iP)
     Npore = Npore + 1
     IndCon(iP) = Npore
+    
+    !debug 
+    write(3,'("iP= ",i13)') iP
+    write(3,'("IndCon after change",i5)') IndCon(iP)
+    write(3,'("Npore ",i5)') Npore
+    
     call Connectivity(iP,Npore,V,nR,IndCon)
-    write(3,'("Found the pore ",i5," with volume ",i12)') Npore, V
+    !write(3,'("Found the pore ",i5," with volume ",i12)') Npore, V
+
+    !debug 
+    write(3,'("IndCon after connect",i5)') IndCon(iP)
+    write(3,'("Npore ",i5)') Npore
+
+    write(3,'("Found the pore ",i5," with volume ",i12)') IndCon(iP), V
  end do
  close(3)
+
+open(7,file='indcon_post_conn.xyz',status='unknown',form='formatted')                                                                                                        
+ write(7,*)nP
+   write(7,*)
+   do iP = 1, nP
+     write(7,'(i13)')IndCon(iP)
+   end do
+ close(7)
+
  open(4,file='connectivity.xyz',status='unknown',form='formatted')
  write(4,*)nP
    write(4,*)
