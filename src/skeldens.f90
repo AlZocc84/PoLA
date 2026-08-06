@@ -31,6 +31,7 @@
      if(AtmSym(iAtm).eq."O")  SkM = SkM + 16.0d0
      if(AtmSym(iAtm).eq."CH") SkM = SkM + 14.0d0
      if(AtmSym(iAtm).eq."Si") SkM = SkM + 28.0d0
+     if(AtmSym(iAtm).eq."Ar")  SkM = SkM + 12.0d0  !for testing 
    end do
 
    SkD = SkM / SkV
