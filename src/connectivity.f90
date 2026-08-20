@@ -22,7 +22,7 @@ SUBROUTINE connectivity(iP,Npore,V,nR,IndCon)
  
  END INTERFACE
 
- allocate(current(26))
+ allocate(current(6))
  current = 0
  Ncurrent = 0
  V=1
@@ -32,6 +32,7 @@ SUBROUTINE connectivity(iP,Npore,V,nR,IndCon)
     do iY = -l,l 
        do iZ = -l,l
           if (iX == 0 .and. iY == 0 .and. iZ == 0) cycle
+          if(.not.((iX == 0 .and. iY == 0 ).or.(iX == 0 .and. iZ == 0).or.(iY == 0 .and. iZ == 0))) cycle
           iPNew = MoveCub(iP,iX,iY,iZ,nR)
           if(IndCon(iPNew).ne.0) cycle
           IndCon(iPNew) = Npore
@@ -46,7 +47,7 @@ SUBROUTINE connectivity(iP,Npore,V,nR,IndCon)
 
  do while(Nel.gt.0)
     
-    allocate(next(Nel*26))
+    allocate(next(Nel*6))
     next = 0
     Nnext = 0
 
@@ -57,6 +58,7 @@ SUBROUTINE connectivity(iP,Npore,V,nR,IndCon)
            do iY = -l,l 
               do iZ = -l,l
                  if (iX == 0 .and. iY == 0 .and. iZ == 0) cycle
+                 if(.not.((iX == 0 .and. iY == 0 ).or.(iX == 0 .and. iZ == 0).or.(iY == 0 .and. iZ == 0))) cycle
                  iPNew = MoveCub(iC,iX,iY,iZ,nR)
                  if(IndCon(iPNew).ne.0) cycle
                  IndCon(iPNew) = Npore

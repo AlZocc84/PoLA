@@ -1,10 +1,10 @@
  SUBROUTINE Texture(nP,dMesh,nVol,DiamStep,VMinD,Cumulative_VMinD,UltraV,MicroV,SmallMesoV,LargeMesoV,MacroV,TotPorV, &     
-                   surf_computation,DistMin,UltraS,MicroS,SmallMesoS,LargeMesoS,MacroS,Rad,IndCav,Surf,Accessible)
+                   surf_computation,DistMin,UltraS,MicroS,SmallMesoS,LargeMesoS,MacroS,Rad,IndCav,Surf,Accessible,IndCon)
 
  IMPLICIT NONE
  INTEGER, PARAMETER :: DP = SELECTED_REAL_KIND(14)
  INTEGER, INTENT(IN) :: nVol, surf_computation, nP
- INTEGER, DIMENSION(:), INTENT(INOUT) :: IndCav
+ INTEGER, DIMENSION(:), INTENT(INOUT) :: IndCav, IndCon
  REAL(DP), DIMENSION(:), INTENT(INOUT) :: VMinD
  REAL(DP), INTENT(IN) :: DiamStep, dMesh, Rad
  REAL(DP), INTENT(OUT) :: UltraV, MicroV, SmallMesoV, LargeMesoV, MacroV, TotPorV
@@ -93,6 +93,7 @@
     do iP=1,nP
        if((IndCav(iP).eq.9).AND.(DistMin(iP).le.(Rad*2.0))) then !this works only if 2Rad le UltraMax TODO:generalize 
          IndCav(iP) = 3
+         IndCon(iP) = -2
          NAV = NAV + v_block
        end if
     end do
