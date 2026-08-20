@@ -1,7 +1,7 @@
 #
 cd src
 for file in *f90; do
-  gfortran -g -Wunused -fdebug-aux-vars -ffpe-trap=invalid,zero,overflow,underflow -c $file
+  gfortran -g -Wunused -fdebug-aux-vars -fbounds-check -ffpe-trap=invalid,zero,overflow,underflow -c $file
   #gfortran -c $file
 done
 cd ..
