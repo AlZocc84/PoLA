@@ -9,7 +9,7 @@ program pore_local_analysis
  INTEGER, PARAMETER :: DP = SELECTED_REAL_KIND(14)
  INTEGER, DIMENSION(:), ALLOCATABLE :: IndCav, SurfCenter, IndCon
  INTEGER :: i, iP, nP, nAtm, iPN, iPNopp, nMono_dens, n_angles, MinD, Npore, V, jP
- INTEGER ::  iM1, iM2, XCub, YCub, ZCub, iC, Print_xyz, nVol, nS, surf_computation
+ INTEGER ::  iM1, iM2, XCub, YCub, ZCub, iC, Print_xyz, nVol, nS, surf_computation, Connect
  INTEGER, DIMENSION(3) :: nR
  REAL(DP), PARAMETER :: Zero=0.0d0, One=1.0d0, Two=2.0d0, Three=3.0d0, Four=4.0d0, Six=6.0d0
  REAL(DP), PARAMETER :: UltraMax=7.0d0, MicroMax=20.0d0, SmallMesoMax=35.0d0, LargeMesoMax=50.0d0
@@ -34,10 +34,10 @@ program pore_local_analysis
 
  INTERFACE
    SUBROUTINE Input(dMesh,nR,nP,nAtm,AtmSym,IndCav,IndCon,DiamStep,RMin,MaxDiameter,Closed_Thresh,Print_xyz, &
-                 surf_computation,Rad,n_angles,versors,Accessible)
+                 surf_computation,Rad,n_angles,versors,Accessible,Connect)
      INTEGER, PARAMETER :: DP = SELECTED_REAL_KIND(14)
      INTEGER, DIMENSION(:), ALLOCATABLE, INTENT(OUT) :: IndCav, IndCon
-     INTEGER, INTENT(OUT) :: nP, nAtm, Print_xyz, surf_computation, n_angles
+     INTEGER, INTENT(OUT) :: nP, nAtm, Print_xyz, surf_computation, n_angles, Connect
      INTEGER, DIMENSION(3), INTENT(OUT) :: nR
      REAL(DP), INTENT(OUT) :: dMesh, DiamStep, RMin, Closed_Thresh, MaxDiameter, Rad
      REAL(DP), DIMENSION(:,:), ALLOCATABLE, INTENT(OUT) :: versors
@@ -75,10 +75,10 @@ program pore_local_analysis
      REAL(DP), INTENT(IN) :: dMesh, Rad
    END SUBROUTINE Surface                                             
    SUBROUTINE Texture(nP,dMesh,nVol,DiamStep,VMinD,Cumulative_VMinD,UltraV,MicroV,SmallMesoV,LargeMesoV,MacroV,TotPorV, &                                   
-                   surf_computation,DistMin,UltraS,MicroS,SmallMesoS,LargeMesoS,MacroS,Rad,IndCav,Surf,Accessible,IndCon)
+                   surf_computation,DistMin,UltraS,MicroS,SmallMesoS,LargeMesoS,MacroS,Rad,IndCav,Surf,Accessible,IndCon,Connect)
      IMPLICIT NONE
      INTEGER, PARAMETER :: DP = SELECTED_REAL_KIND(14)
-     INTEGER, INTENT(IN) :: nVol, surf_computation, nP
+     INTEGER, INTENT(IN) :: nVol, surf_computation, nP, Connect
      INTEGER, DIMENSION(:), INTENT(INOUT) :: IndCav, IndCon
      REAL(DP), DIMENSION(:), INTENT(INOUT) :: VMinD
      REAL(DP), INTENT(IN) :: DiamStep, dMesh, Rad
@@ -115,7 +115,7 @@ program pore_local_analysis
 ! and will contain a detailed classification of the void blocks (Volume and surface: <7A(ultramicro), >7 and <20 (micro), meso etc.)
 
  call Input(dMesh,nR,nP,nAtm,AtmSym,IndCav,IndCon,DiamStep,RMin,MaxDiameter,Closed_Thresh,Print_xyz, &
-                 surf_computation,Rad,n_angles,versors,Accessible)
+                 surf_computation,Rad,n_angles,versors,Accessible,Connect)
 
  iM1 = nR(1)
  iM2 = nR(1)*nR(2)
@@ -248,7 +248,7 @@ program pore_local_analysis
 ! by adsorbates, then this block becomes "filled" and is not considered in the porous volume analysis
    if(RMax.gt.Zero.AND.RMax.lt.Closed_Thresh) then
      IndCav(iP) = 2
-     IndCon(iP) = -1
+     if (Connect.gt.0) IndCon(iP) = -1
      cycle
 
 !---------- DEBUG_ALL_DIST_11-06-2026-----------------
@@ -292,7 +292,7 @@ program pore_local_analysis
  
 ! Compute porous volumes
  call Texture(nP,dMesh,nVol,DiamStep,VMinD,Cumulative_VMinD,UltraV,MicroV,SmallMesoV,LargeMesoV,MacroV,TotPorV, &     
-                   surf_computation,DistMin,UltraS,MicroS,SmallMesoS,LargeMesoS,MacroS,Rad,IndCav,Surf,Accessible,IndCon)
+                   surf_computation,DistMin,UltraS,MicroS,SmallMesoS,LargeMesoS,MacroS,Rad,IndCav,Surf,Accessible,IndCon,Connect)
 
 ! Fact = A3_gMol_to_cm3_g / SkM
 ! open(5,file='Srf.txt', status='unknown', form='formatted')
@@ -321,60 +321,61 @@ program pore_local_analysis
 !   end do
 ! close(7)
 
- open(3,file='connectivity.txt',status='unknown',form='formatted')
- do iP =1, nP
-    if(IndCon(iP).ne.0) cycle
-    !write(3,'("IndCon(iP) at beginnig ",i5)') IndCon(iP)
-    Npore = Npore + 1
-    IndCon(iP) = Npore
-    
-    !debug 
-!    write(3,'("iP= ",i13)') iP
-!    write(3,'("IndCon after change",i5)') IndCon(iP)
-!    write(3,'("Npore ",i5)') Npore
-    
-    call Connectivity(iP,Npore,V,nR,IndCon)
-    write(3,'("Found the pore ",i5," with volume ",i12)') Npore, V
-
-    !debug 
-!    write(3,'("IndCon after connect",i5)') IndCon(iP)
-!    write(3,'("Npore ",i5)') Npore
-    !write(3,'("Found the pore ",i5," with volume ",i12)') IndCon(iP), V
-
- end do
- close(3)
-
-!open(7,file='indcon_post_conn.xyz',status='unknown',form='formatted')                                                                                                        
-! write(7,*)nP
-!   write(7,*)
-!   do iP = 1, nP
-!     write(7,'(i13)')IndCon(iP)
-!   end do
-! close(7)
-
- open(4,file='connectivity.xyz',status='unknown',form='formatted')
- write(4,*)nP
-   write(4,*)
-   iM2 = nR(1)*nR(2)
-   do iP = 1, nP
-     iC = iP - 1
-     ZCub = INT(iC/iM2) + 1
-     YCub = INT(MOD(iC,iM2)/nR(1)) + 1
-     XCub = MOD(MOD(iC,iM2),nR(1)) + 1
-     XX = dMesh*(XCub - 0.5)
-     YY = dMesh*((YCub + 1) - 0.5)
-     ZZ = dMesh*((ZCub + 1) - 0.5)
-     if(IndCon(iP).eq.(-1)) then
-       write(4,'("XX",3f12.6)')XX,YY,ZZ
-     else if (IndCon(iP).eq.(-2)) then
-       write(4,'("YY",3f12.6)')XX,YY,ZZ
-     else 
-       write(4,'(i5,3f12.6)')IndCon(iP),XX,YY,ZZ
-     end if
-
-   end do
- close(4)
-
+if (Connect.gt.0) then
+    open(3,file='connectivity.txt',status='unknown',form='formatted')
+    do iP =1, nP
+       if(IndCon(iP).ne.0) cycle
+       !write(3,'("IndCon(iP) at beginnig ",i5)') IndCon(iP)
+       Npore = Npore + 1
+       IndCon(iP) = Npore
+       
+       !debug 
+   !    write(3,'("iP= ",i13)') iP
+   !    write(3,'("IndCon after change",i5)') IndCon(iP)
+   !    write(3,'("Npore ",i5)') Npore
+       
+       call Connectivity(iP,Npore,V,nR,IndCon)
+       write(3,'("Found the pore ",i5," with volume ",i12)') Npore, V
+   
+       !debug 
+   !    write(3,'("IndCon after connect",i5)') IndCon(iP)
+   !    write(3,'("Npore ",i5)') Npore
+       !write(3,'("Found the pore ",i5," with volume ",i12)') IndCon(iP), V
+   
+    end do
+    close(3)
+   
+   !open(7,file='indcon_post_conn.xyz',status='unknown',form='formatted')                                                                                                        
+   ! write(7,*)nP
+   !   write(7,*)
+   !   do iP = 1, nP
+   !     write(7,'(i13)')IndCon(iP)
+   !   end do
+   ! close(7)
+   
+    open(4,file='connectivity.xyz',status='unknown',form='formatted')
+    write(4,*)nP
+      write(4,*)
+      iM2 = nR(1)*nR(2)
+      do iP = 1, nP
+        iC = iP - 1
+        ZCub = INT(iC/iM2) + 1
+        YCub = INT(MOD(iC,iM2)/nR(1)) + 1
+        XCub = MOD(MOD(iC,iM2),nR(1)) + 1
+        XX = dMesh*(XCub - 0.5)
+        YY = dMesh*((YCub + 1) - 0.5)
+        ZZ = dMesh*((ZCub + 1) - 0.5)
+        if(IndCon(iP).eq.(-1)) then
+          write(4,'("XX",3f12.6)')XX,YY,ZZ
+        else if (IndCon(iP).eq.(-2)) then
+          write(4,'("YY",3f12.6)')XX,YY,ZZ
+        else 
+          write(4,'(i5,3f12.6)')IndCon(iP),XX,YY,ZZ
+        end if
+   
+      end do
+    close(4)
+end if
 ! Write the results
  call Output(dMesh,nR,nP,nVol,IndCav,DiamStep,Cumulative_VMinD,VMinD,Accessible, &
              UltraV,MicroV,SmallMesoV,LargeMesoV,MacroV,TotPorV,SkV,SkM,SkD,Print_xyz, &

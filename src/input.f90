@@ -1,11 +1,11 @@
  SUBROUTINE Input(dMesh,nR,nP,nAtm,AtmSym,IndCav,IndCon,DiamStep,RMin,MaxDiameter,Closed_Thresh,Print_xyz, &
-                 Surf_computation,Rad,n_angles,versors,Accessible)
+                 Surf_computation,Rad,n_angles,versors,Accessible,Connect)
  
  USE angle_scan
 
  IMPLICIT NONE
  INTEGER, ALLOCATABLE, INTENT(OUT) :: IndCav(:), IndCon(:)
- INTEGER, INTENT(OUT) :: nP, nAtm, Print_xyz, Surf_computation, n_angles
+ INTEGER, INTENT(OUT) :: nP, nAtm, Print_xyz, Surf_computation, n_angles, Connect
  INTEGER, DIMENSION(3), INTENT(OUT) :: nR
  INTEGER :: iAtm, lCube, ios
  INTEGER :: iCub, XCub, YCub, ZCub, iCubNew, iC, iM2, iX, iY, iZ, XP, YP, ZP
@@ -18,7 +18,7 @@
  REAL(DP), ALLOCATABLE :: XAtm(:), YAtm(:), ZAtm(:)
  REAL(DP) :: Xmin, Ymin, Zmin, DX, DY, DZ, dist_x, dist_y, dist_z, D
  CHARACTER(2), ALLOCATABLE, INTENT(OUT) :: AtmSym(:)
- CHARACTER(100) :: File_name, line, print_por, Surf_com, Fix, do_ac_vol
+ CHARACTER(100) :: File_name, line, print_por, Surf_com, Fix, do_ac_vol, do_connect
  LOGICAL, INTENT(OUT) :: Accessible
  LOGICAL :: FixCoord
 
@@ -45,6 +45,7 @@
  FixCoord = .False.
  n_angles = 120
  Accessible = .True.
+ Connect = 0
 
 ! Read values from input file 
  open(1, file='input.dat', status='old', form='formatted')
@@ -156,6 +157,20 @@
            Accessible = .True.
         end if
 
+     else if(line(3:15).eq.'Connectivity') then
+        read(1,*,iostat=ios) do_connect   ! Index to consider only the accessible volumee (no=don't, yes=does)
+        if(ios.ne.0) then
+                write(6,'("Error in file input: value for "A20" is invalid")') line
+                stop
+        end if
+        if (do_connect(1:2).eq.'no') then
+           Connect = 0
+        else if(do_connect(1:5).eq.'total') then
+           Connect = 1
+        else if(do_connect(1:10).eq.'accessible') then
+           Connect = 2
+        end if
+
      else 
         write(6,'("Error: "A20" is invalid")') line 
         stop
@@ -165,6 +180,15 @@
  end do
 
  close(1)
+
+ !check that if Accessible is True, Connectivity IS NOT 1 (total)
+ if (.not.Accessible) then
+    if (Connect.eq.2) then
+       write(6,'("Error: Analisys with total volume is not compatible with accessible connectivity")')  
+       write(6,'("Please change setting: if you need the accessible connectivity, perform analisys with accessible volume.")')  
+       stop
+    end if
+ end if
 
  ! chose the versors to map the material:
  allocate(versors(3,n_angles))
@@ -226,11 +250,15 @@
  nP = nR(1)*nR(2)*nR(3)
  iM2 = nR(1)*nR(2)
  allocate(IndCav(nP))
- allocate(IndCon(nP))
+
+ if (Connect.gt.0) then
+    allocate(IndCon(nP))
+    IndCon = 0
+ end if
+
 ! The volume is divided in blocks with edge dMesh. For each block, IdnCav = 0 if void, = 1 if occupied by the
 ! material skeleton.
  IndCav = 0
- IndCon = 0
 ! Loop on atoms and find to which "mesh coordinate" each one belongs, then find the block index and put
 ! the corresponding IndCav to 1 (i.e. this block is filled)
  do iAtm = 1, nAtm
@@ -242,7 +270,7 @@
      if(ZCub.eq.(nR(3)+1)) ZCub = nR(3) ! Take into account possible rounding errors in INT function
    iCub = XCub + nR(1)*(YCub-1) + iM2*(ZCub-1)
    IndCav(iCub) = 1
-   IndCon(iCub) = -1
+   if (Connect.gt.1) IndCon(iCub) = -1   
 
 ! Consider the vdW radius of this atom and fill the blocks whose center falls inside the vdW sphere 
    lCube = int(FindRvdW(AtmSym(iAtm)) / dMesh)+1
@@ -269,7 +297,7 @@
         D = sqrt(dist_x**2+dist_y**2+dist_z**2)
         if (D.le.FindRvdW(AtmSym(iAtm))) then
            IndCav(iCubNew) = 1
-           IndCon(iCubNew) = -1
+           if(Connect.gt.0) IndCon(iCubNew) = -1
         end if
      end do
     end do
