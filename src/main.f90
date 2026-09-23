@@ -302,13 +302,13 @@ program pore_local_analysis
 ! close(5)
 
 !----------DEBUG_MICROPOROUS_VOLUME---20/08/2026----------------------
- do iP =1, nP
-    if(IndCav(iP).eq.9) then
-      jP = iP
-      write(6,'("iP = ",i12)') jP
-      write(6,'("MinD = ",f12.6)') DistMin(jP)
-    end if
- end do
+! do iP =1, nP
+!    if(IndCav(iP).eq.9) then
+!      jP = iP
+!      write(6,'("iP = ",i12)') jP
+!      write(6,'("MinD = ",f12.6)') DistMin(jP)
+!    end if
+! end do
 !---------------------------------------------------------------------
 
 ! Find connectivity
