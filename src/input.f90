@@ -222,7 +222,7 @@
    close(1)
  end if
 
- nR = (/ NINT(DX/dMesh), NINT(DY/dMesh), NINT(DZ/dMesh) /)
+ nR = (/ CEILING(DX/dMesh), CEILING(DY/dMesh), CEILING(DZ/dMesh) /)
  nP = nR(1)*nR(2)*nR(3)
  iM2 = nR(1)*nR(2)
  allocate(IndCav(nP))
