@@ -1,4 +1,4 @@
- SUBROUTINE Surface(Surf_Computation,dMesh,nR,nP,IndCav,Rad,SurfCenter,nS,nMono_dens)
+ SUBROUTINE Surface(Surf_Computation,dMesh,nR,nP,Rad,SurfCenter,nS,nMono_dens,IndSurf)
 
  IMPLICIT NONE
 
@@ -7,7 +7,7 @@
  INTEGER, INTENT(IN) :: Surf_Computation, nP 
  INTEGER, INTENT(OUT) :: nS, nMono_dens
  INTEGER, DIMENSION(3), INTENT(IN) :: nR
- INTEGER, DIMENSION(:), INTENT(INOUT) :: IndCav
+ INTEGER, DIMENSION(:), INTENT(INOUT) :: IndSurf
  INTEGER, DIMENSION(:), ALLOCATABLE, INTENT(OUT) :: SurfCenter
  REAL(DP), INTENT(IN) :: dMesh, Rad
 
@@ -47,7 +47,7 @@ Logical :: Overlap, Touch
 
  do iP = 1, nP
 ! Loop only on void blocks
-   if(IndCav(iP).ne.0) cycle
+   if(IndSurf(iP).ne.0) cycle
 ! Find the block Cartesian coordinates
    iC = iP - 1
    ZP = INT(iC/(iM2))*dMesh + dMesh/2.0d0
@@ -65,8 +65,8 @@ Logical :: Overlap, Touch
        do iZ = -lCube,lCube
          if(Overlap) exit
          iPNew = MoveCub(iP, iX, iY, iZ, nR)
-! Skip if the new block is void (IndCav=0) or has already been classified as occupiable (IndCav=3)
-         if (IndCav(iPNew).eq.0.or.IndCav(iPNew).eq.3) cycle
+! Skip if the new block is void (IndSurf=0) or has already been classified as occupiable (IndSurf=3)
+         if (IndSurf(iPNew).eq.0.or.IndSurf(iPNew).eq.3) cycle
 ! Find the coordinates of the new block
          iC = iPNew - 1
          ZP1 = INT(iC/(iM2))*dMesh + dMesh/2.0d0
@@ -93,10 +93,10 @@ Logical :: Overlap, Touch
      end do
    end do
 
-! If this probe touched some blocks, and it was not overlapped, change the IndCav of the surface blocks
+! If this probe touched some blocks, and it was not overlapped, change the IndSurf of the surface blocks
    if (Touch .AND. .not.Overlap) then
      nS = nS + 1
-     IndCav(iP) = 3
+     IndSurf(iP) = 3
      SurfCenter(nS) = iP
      SurfCenter(nS+1) = -1
    end if
@@ -105,7 +105,7 @@ Logical :: Overlap, Touch
 ! Compute the number of void blocks belonging to one of the spherical probes which form the surface monolayer
  do iP = 1, nP
 ! Loop only on blocks which could host the center of a probe touching the surface (occupiable blocks)
-   if(IndCav(iP).ne.3) cycle
+   if(IndSurf(iP).ne.3) cycle
 ! Find the block Cartesian coordinates
    iC = iP - 1
    ZP = INT(iC/(iM2))*dMesh + dMesh/2.0d0
@@ -119,8 +119,8 @@ Logical :: Overlap, Touch
        do iZ = -lCube,lCube
          iPNew = MoveCub(iP, iX, iY, iZ, nR)
 ! Skip if the block is filled or has been already assigned
-         if (IndCav(iPNew).ne.0) cycle
-         ! IndCav(iPNew) = 4                     uncomment this to get surface volume with cubical probe
+         if (IndSurf(iPNew).ne.0) cycle
+         ! IndSurf(iPNew) = 4                     uncomment this to get surface volume with cubical probe
  ! Find the coordinates of the new block                                                         comment from here
           iC = iPNew - 1                                                                          ! to get surface volume 
           ZP1 = INT(iC/(iM2))*dMesh + dMesh/2.0d0                                                  ! with cubical probe
@@ -138,8 +138,8 @@ Logical :: Overlap, Touch
  ! Compute the actual distance
           D = sqrt(Dist_X*Dist_X + Dist_Y*Dist_Y + Dist_Z*Dist_Z)
  ! If the distance is lower than Rad, so that this block would fall inside one of the spherical probes
- ! forming the surface monolayer, its IndCav is _temporarily_ set to 4
-          if (D.le.Rad) IndCav(iPNew) = 4                                                          ! comment to here
+ ! forming the surface monolayer, its IndSurf is _temporarily_ set to 4
+          if (D.le.Rad) IndSurf(iPNew) = 4                                                          ! comment to here
        end do
      end do
    end do
@@ -148,9 +148,9 @@ Logical :: Overlap, Touch
 ! Compute the volume of the surface monolayer
  MonoVol = 0.0d0
  do iP = 1, nP
-! If the block belongs to the monolayer (IndCav=3 is the center of a probe, 
-! IndCav=4 is falling inside some probe) increment the monolayer volume
-   if (IndCav(iP).eq.3 .OR. IndCav(iP).eq.4) MonoVol = MonoVol + dMesh*dMesh*dMesh
+! If the block belongs to the monolayer (IndSurf=3 is the center of a probe, 
+! IndSurf=4 is falling inside some probe) increment the monolayer volume
+   if (IndSurf(iP).eq.3 .OR. IndSurf(iP).eq.4) MonoVol = MonoVol + dMesh*dMesh*dMesh
  end do
 
 ! Find the number of spherical probes forming the monolayer

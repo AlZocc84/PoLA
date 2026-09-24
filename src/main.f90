@@ -7,7 +7,7 @@ program pore_local_analysis
  IMPLICIT NONE
 
  INTEGER, PARAMETER :: DP = SELECTED_REAL_KIND(14)
- INTEGER, DIMENSION(:), ALLOCATABLE :: IndCav, SurfCenter
+ INTEGER, DIMENSION(:), ALLOCATABLE :: IndCav, SurfCenter, IndSurf
  INTEGER :: i, iP, nP, nAtm, iPN, iPNopp, nMono_dens, n_angles, MinD
  INTEGER ::  iM1, iM2, XCub, YCub, ZCub, iC, Print_xyz, nVol, nS, surf_computation
  INTEGER, DIMENSION(3) :: nR
@@ -34,9 +34,9 @@ program pore_local_analysis
 
  INTERFACE
    SUBROUTINE Input(dMesh,nR,nP,nAtm,AtmSym,IndCav,DiamStep,RMin,MaxDiameter,Closed_Thresh,Print_xyz, &
-                 surf_computation,Rad,n_angles,versors,Accessible)
+                 surf_computation,Rad,n_angles,versors,Accessible,IndSurf)
      INTEGER, PARAMETER :: DP = SELECTED_REAL_KIND(14)
-     INTEGER, DIMENSION(:), ALLOCATABLE, INTENT(OUT) :: IndCav
+     INTEGER, DIMENSION(:), ALLOCATABLE, INTENT(OUT) :: IndCav, IndSurf
      INTEGER, INTENT(OUT) :: nP, nAtm, Print_xyz, surf_computation, n_angles
      INTEGER, DIMENSION(3), INTENT(OUT) :: nR
      REAL(DP), INTENT(OUT) :: dMesh, DiamStep, RMin, Closed_Thresh, MaxDiameter, Rad
@@ -62,7 +62,7 @@ program pore_local_analysis
      REAL(DP), INTENT(OUT) :: SkV, SkM, SkD
      CHARACTER(2), DIMENSION(:), INTENT(IN) :: AtmSym
    END SUBROUTINE Skel_Dens
-     SUBROUTINE Surface(Surf_Computation,dMesh,nR,nP,IndCav,Rad,SurfCenter,nS,nMono_dens)
+     SUBROUTINE Surface(Surf_Computation,dMesh,nR,nP,Rad,SurfCenter,nS,nMono_dens,IndSurf)
      IMPLICIT NONE
 
      INTEGER, PARAMETER :: DP = SELECTED_REAL_KIND(14)
@@ -70,17 +70,18 @@ program pore_local_analysis
      INTEGER, INTENT(IN) :: Surf_Computation, nP                                                                                                      
      INTEGER, INTENT(OUT) :: nS, nMono_dens
      INTEGER, DIMENSION(3), INTENT(IN) :: nR
-     INTEGER, DIMENSION(:), INTENT(INOUT) :: IndCav
+     INTEGER, DIMENSION(:), INTENT(INOUT) :: IndSurf
      INTEGER, DIMENSION(:), ALLOCATABLE, INTENT(OUT) :: SurfCenter
      REAL(DP), INTENT(IN) :: dMesh, Rad
 
    END SUBROUTINE Surface                                             
    SUBROUTINE Texture(nP,dMesh,nVol,DiamStep,VMinD,Cumulative_VMinD,UltraV,MicroV,SmallMesoV,LargeMesoV,MacroV,TotPorV, &                                   
-                   surf_computation,DistMin,UltraS,MicroS,SmallMesoS,LargeMesoS,MacroS,Rad,IndCav,Surf,Accessible)
+                   surf_computation,DistMin,UltraS,MicroS,SmallMesoS,LargeMesoS,MacroS,Rad,IndCav,Surf,Accessible,IndSurf)
      IMPLICIT NONE
      INTEGER, PARAMETER :: DP = SELECTED_REAL_KIND(14)
      INTEGER, INTENT(IN) :: nVol, surf_computation, nP
      INTEGER, DIMENSION(:), INTENT(INOUT) :: IndCav
+     INTEGER, DIMENSION(:), INTENT(IN) :: IndSurf
      REAL(DP), DIMENSION(:), INTENT(INOUT) :: VMinD
      REAL(DP), INTENT(IN) :: DiamStep, dMesh, Rad
      REAL(DP), INTENT(OUT) :: UltraV, MicroV, SmallMesoV, LargeMesoV, MacroV, TotPorV
@@ -236,11 +237,11 @@ program pore_local_analysis
  end do
 
  ! Compute specific surface
- call Surface(Surf_Computation,dMesh,nR,nP,IndCav,Rad,SurfCenter,nS,nMono_dens) 
+ call Surface(Surf_Computation,dMesh,nR,nP,Rad,SurfCenter,nS,nMono_dens,IndSurf) 
  
 ! Compute porous volumes
  call Texture(nP,dMesh,nVol,DiamStep,VMinD,Cumulative_VMinD,UltraV,MicroV,SmallMesoV,LargeMesoV,MacroV,TotPorV, &     
-                   surf_computation,DistMin,UltraS,MicroS,SmallMesoS,LargeMesoS,MacroS,Rad,IndCav,Surf,Accessible)
+                   surf_computation,DistMin,UltraS,MicroS,SmallMesoS,LargeMesoS,MacroS,Rad,IndCav,Surf,Accessible,IndSurf)
 
 ! Fact = A3_gMol_to_cm3_g / SkM
 ! open(5,file='Srf.txt', status='unknown', form='formatted')
