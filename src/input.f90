@@ -1,10 +1,10 @@
  SUBROUTINE Input(dMesh,nR,nP,nAtm,AtmSym,IndCav,DiamStep,RMin,MaxDiameter,Closed_Thresh,Print_xyz, &
-                 Surf_computation,Rad,n_angles,versors,Accessible)
+                 Surf_computation,Rad,n_angles,versors,Accessible,IndSurf)
  
  USE angle_scan
 
  IMPLICIT NONE
- INTEGER, ALLOCATABLE, INTENT(OUT) :: IndCav(:)
+ INTEGER, ALLOCATABLE, INTENT(OUT) :: IndCav(:), IndSurf(:)
  INTEGER, INTENT(OUT) :: nP, nAtm, Print_xyz, Surf_computation, n_angles
  INTEGER, DIMENSION(3), INTENT(OUT) :: nR
  INTEGER :: iAtm, lCube, ios
@@ -165,7 +165,7 @@
  end do
 
  close(1)
-
+ 
  ! chose the versors to map the material:
  allocate(versors(3,n_angles))
  if(n_angles.eq.120) then
@@ -229,6 +229,13 @@
 ! The volume is divided in blocks with edge dMesh. For each block, IdnCav = 0 if void, = 1 if occupied by the
 ! material skeleton.
  IndCav = 0
+
+ !If surface computation is required, allocate the IndSurf array
+ if (surf_computation.eq.1) then
+    allocate(IndSurf(nP))
+    IndSurf = 0
+ end if
+
 ! Loop on atoms and find to which "mesh coordinate" each one belongs, then find the block index and put
 ! the corresponding IndCav to 1 (i.e. this block is filled)
  do iAtm = 1, nAtm
@@ -240,6 +247,7 @@
      if(ZCub.eq.(nR(3)+1)) ZCub = nR(3) ! Take into account possible rounding errors in INT function
    iCub = XCub + nR(1)*(YCub-1) + iM2*(ZCub-1)
    IndCav(iCub) = 1
+   if (surf_computation.eq.1) IndSurf(iCub) = -1
 
 ! Consider the vdW radius of this atom and fill the blocks whose center falls inside the vdW sphere 
    lCube = int(FindRvdW(AtmSym(iAtm)) / dMesh)+1
@@ -264,7 +272,12 @@
         ! Check if center is within radius from atom.
 
         D = sqrt(dist_x**2+dist_y**2+dist_z**2)
-        if (D.le.FindRvdW(AtmSym(iAtm))) IndCav(iCubNew) = 1
+
+        if (D.le.FindRvdW(AtmSym(iAtm))) then
+           IndCav(iCubNew) = 1
+           if (surf_computation.eq.1) IndSurf(iCubNew) = -1
+        end if
+
      end do
     end do
    end do
