@@ -76,7 +76,7 @@ program pore_local_analysis
 
    END SUBROUTINE Surface                                             
    SUBROUTINE Texture(nP,dMesh,nVol,DiamStep,VMinD,Cumulative_VMinD,UltraV,MicroV,SmallMesoV,LargeMesoV,MacroV,TotPorV, &                                   
-                   surf_computation,DistMin,UltraS,MicroS,SmallMesoS,LargeMesoS,MacroS,Rad,IndCav,Surf,Accessible,IndSurf)
+                   surf_computation,DistMin,UltraS,MicroS,SmallMesoS,LargeMesoS,MacroS,Rad,IndCav,Surf,Accessible,IndSurf,surf_computation)
      IMPLICIT NONE
      INTEGER, PARAMETER :: DP = SELECTED_REAL_KIND(14)
      INTEGER, INTENT(IN) :: nVol, surf_computation, nP
@@ -89,7 +89,7 @@ program pore_local_analysis
      REAL(DP), DIMENSION(:), INTENT(IN) :: DistMin
      REAL(DP), DIMENSION(:), INTENT(OUT) :: Cumulative_VMinD
      REAL(DP), DIMENSION(:), ALLOCATABLE, INTENT(OUT) :: Surf
-     LOGICAL, INTENT(IN) :: Accessible
+     LOGICAL, INTENT(IN) :: Accessible, surf_computation
    END SUBROUTINE Texture
    SUBROUTINE Output(dMesh,nR,nP,nVol,IndCav,DiamStep,Cumulative_VMinD,VMinD,Accessible, &
              UltraV,MicroV,SmallMesoV,LargeMesoV,MacroV,TotPorV,SkV,SkM,SkD,Print_xyz, &
@@ -231,7 +231,7 @@ program pore_local_analysis
  
 ! Compute porous volumes
  call Texture(nP,dMesh,nVol,DiamStep,VMinD,Cumulative_VMinD,UltraV,MicroV,SmallMesoV,LargeMesoV,MacroV,TotPorV, &     
-                   surf_computation,DistMin,UltraS,MicroS,SmallMesoS,LargeMesoS,MacroS,Rad,IndCav,Surf,Accessible,IndSurf)
+                   surf_computation,DistMin,UltraS,MicroS,SmallMesoS,LargeMesoS,MacroS,Rad,IndCav,Surf,Accessible,IndSurf,surf_computation)
 
 ! Fact = A3_gMol_to_cm3_g / SkM
 ! open(5,file='Srf.txt', status='unknown', form='formatted')

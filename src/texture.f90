@@ -1,5 +1,5 @@
  SUBROUTINE Texture(nP,dMesh,nVol,DiamStep,VMinD,Cumulative_VMinD,UltraV,MicroV,SmallMesoV,LargeMesoV,MacroV,TotPorV, &     
-                   surf_computation,DistMin,UltraS,MicroS,SmallMesoS,LargeMesoS,MacroS,Rad,IndCav,Surf,Accessible,IndSurf)
+                   surf_computation,DistMin,UltraS,MicroS,SmallMesoS,LargeMesoS,MacroS,Rad,IndCav,Surf,Accessible,IndSurf.surf_computation)
 
  IMPLICIT NONE
  INTEGER, PARAMETER :: DP = SELECTED_REAL_KIND(14)
@@ -13,7 +13,7 @@
  REAL(DP), DIMENSION(:), INTENT(IN) :: DistMin
  REAL(DP), DIMENSION(:), INTENT(OUT) :: Cumulative_VMinD
  REAL(DP), DIMENSION(:), ALLOCATABLE, INTENT(OUT) :: Surf
- LOGICAL, INTENT(IN) :: Accessible
+ LOGICAL, INTENT(IN) :: Accessible, surf_computation
  INTEGER :: iVol, iP, MinD
  REAL(DP) :: NAV, v_block
  REAL(DP), PARAMETER :: Zero=0.0d0, Two=2.0d0
@@ -119,50 +119,40 @@
  do iP= 1, nP
     if (IndCav(iP).eq.1.OR.IndCav(iP).eq.2) cycle     !Filled blocks
    
-    if (IndSurf(iP).eq.3.OR.IndSurf(iP).eq.4) then
-       if (DistMin(iP).le.UltraMax) then             !Ultramicro surf block
-          IndCav(iP) = 4
-       else if (DistMin(iP).le.MicroMax) then        !Micro surf block
-          IndCav(iP) = 5
-       else if (DistMin(iP).le.SmallMesoMax) then    !SmallMeso surf block
-          IndCav(iP) = 6
-       else if (DistMin(iP).le.LargeMesoMax) then    !LargeMeso surf block
-          IndCav(iP) = 7
-       else                                          !Macro surf block
-          IndCav(iP) = 8
-       end if                                                                
-    end if
-   
-    if (DistMin(iP).le.UltraMax) then      !Ultramicro bulk block
-       IndCav(iP) = 9
-    else if (DistMin(iP).le.MicroMax) then       !Micro bulk block
-       IndCav(iP) = 10
-    else if (DistMin(iP).le.SmallMesoMax) then   !SmallMeso bulk block
-       IndCav(iP) = 11
-    else if (DistMin(iP).le.LargeMesoMax) then   !LargeMeso bulk block
-       IndCav(iP) = 12
-    else                                         !Macro bulk block   
-       IndCav(iP) = 13
-    end if
+    if(surface_computaion) then
+       if (IndSurf(iP).eq.3.OR.IndSurf(iP).eq.4) then
+          if (DistMin(iP).le.UltraMax) then             !Ultramicro surf block
+             IndCav(iP) = 4
+          else if (DistMin(iP).le.MicroMax) then        !Micro surf block
+             IndCav(iP) = 5
+          else if (DistMin(iP).le.SmallMesoMax) then    !SmallMeso surf block
+             IndCav(iP) = 6
+          else if (DistMin(iP).le.LargeMesoMax) then    !LargeMeso surf block
+             IndCav(iP) = 7
+          else                                          !Macro surf block
+             IndCav(iP) = 8
+          end if                                                                
+       end if
 
+    elseif (IndCav(iP).ne.3) then
+
+          if (DistMin(iP).le.UltraMax) then      !Ultramicro bulk block
+             IndCav(iP) = 9
+          else if (DistMin(iP).le.MicroMax) then       !Micro bulk block
+             IndCav(iP) = 10
+          else if (DistMin(iP).le.SmallMesoMax) then   !SmallMeso bulk block
+             IndCav(iP) = 11
+          else if (DistMin(iP).le.LargeMesoMax) then   !LargeMeso bulk block
+             IndCav(iP) = 12
+          else                                         !Macro bulk block   
+             IndCav(iP) = 13
+          end if
+    end if
  end do
 
- if(Accessible) then
-    do iP=1,nP
-       if((IndCav(iP).eq.9).AND.(DistMin(iP).le.(Rad*2.0))) then !this works only if 2Rad le UltraMax TODO:generalize 
-         IndCav(iP) = 3
-         NAV = NAV + v_block
-       end if
-    end do
- end if
-    
-!  Assign the block to the suitable pore set
-! At this point is only the accessible volume
+!  Assign the block to the suitable surface set
   do iP = 1,nP
-   if(IndCav(iP).eq.3) then
-     MinD = INT(DistMin(iP)/DiamStep) + 1 
-     VMinD(MinD) = VMinD(MinD) - v_block
-   else if(IndCav(iP).ge.4.AND.IndCav(iP).le.8) then
+   if(IndCav(iP).ge.4.AND.IndCav(iP).le.8) then
      MinD = INT(DistMin(iP)/DiamStep) + 1
      Surf(MinD) = Surf(MinD) + v_block
    end if
