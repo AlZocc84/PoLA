@@ -226,16 +226,6 @@ program pore_local_analysis
 ! Compute skeletal density
  call Skel_Dens(dMesh,nP,IndCav,nAtm,AtmSym,SkV,SkM,SkD)
  
-! Assign the block to the suitable pore set
-! Volumes associated to RMin are not added to VMinD
-! At this point is the total volume (accessible and not accessible)
- do iP=1,nP
-   if(IndCav(iP).eq.0) then
-     MinD = INT(DistMin(iP)/DiamStep) + 1
-     VMinD(MinD) = VMinD(MinD) + v_block 
-   end if
- end do
-
  ! Compute specific surface
  call Surface(Surf_Computation,dMesh,nR,nP,Rad,SurfCenter,nS,nMono_dens,IndSurf) 
  

@@ -1,10 +1,11 @@
  SUBROUTINE Texture(nP,dMesh,nVol,DiamStep,VMinD,Cumulative_VMinD,UltraV,MicroV,SmallMesoV,LargeMesoV,MacroV,TotPorV, &     
-                   surf_computation,DistMin,UltraS,MicroS,SmallMesoS,LargeMesoS,MacroS,Rad,IndCav,Surf,Accessible)
+                   surf_computation,DistMin,UltraS,MicroS,SmallMesoS,LargeMesoS,MacroS,Rad,IndCav,Surf,Accessible,IndSurf)
 
  IMPLICIT NONE
  INTEGER, PARAMETER :: DP = SELECTED_REAL_KIND(14)
  INTEGER, INTENT(IN) :: nVol, surf_computation, nP
  INTEGER, DIMENSION(:), INTENT(INOUT) :: IndCav
+ INTEGER, DIMENSION(:), INTENT(IN) :: IndSurf
  REAL(DP), DIMENSION(:), INTENT(INOUT) :: VMinD
  REAL(DP), INTENT(IN) :: DiamStep, dMesh, Rad
  REAL(DP), INTENT(OUT) :: UltraV, MicroV, SmallMesoV, LargeMesoV, MacroV, TotPorV
@@ -17,6 +18,22 @@
  REAL(DP) :: NAV, v_block
  REAL(DP), PARAMETER :: Zero=0.0d0, Two=2.0d0
  REAL(DP), PARAMETER :: UltraMax=7.0d0, MicroMax=20.0d0, SmallMesoMax=35.0d0, LargeMesoMax=50.0d0
+
+! Assign the block to the suitable pore set
+! Volumes associated to RMin are not added to VMinD
+! At this point is the total volume (accessible and not accessible)
+ do iP=1,nP
+   if(IndCav(iP).eq.0) then
+     MinD = INT(DistMin(iP)/DiamStep) + 1
+     VMinD(MinD) = VMinD(MinD) + v_block 
+   end if
+ end do
+
+!Compute the Accessible volume, if required
+
+
+
+
 
 
 ! Compute simplified, total cumulative volumes and surface
@@ -57,36 +74,34 @@
 !   13       vol macro (Rmin > 50 A)           
 
  do iP= 1, nP
- if (IndCav(iP).eq.1.OR.IndCav(iP).eq.2) then     !Filled blocks
-     cycle
-
-   else if (IndCav(iP).eq.0) then
-           if (DistMin(iP).le.UltraMax) then      !Ultramicro bulk block
-        IndCav(iP) = 9
-     else if (DistMin(iP).le.MicroMax) then       !Micro bulk block
-        IndCav(iP) = 10
-     else if (DistMin(iP).le.SmallMesoMax) then   !SmallMeso bulk block
-        IndCav(iP) = 11
-     else if (DistMin(iP).le.LargeMesoMax) then   !LargeMeso bulk block
+    if (IndCav(iP).eq.1.OR.IndCav(iP).eq.2) cycle     !Filled blocks
+   
+    if (IndSurf(iP).eq.3.OR.IndSurf(iP).eq.4) then
+       if (DistMin(iP).le.UltraMax) then             !Ultramicro surf block
+          IndCav(iP) = 4
+       else if (DistMin(iP).le.MicroMax) then        !Micro surf block
+          IndCav(iP) = 5
+       else if (DistMin(iP).le.SmallMesoMax) then    !SmallMeso surf block
+          IndCav(iP) = 6
+       else if (DistMin(iP).le.LargeMesoMax) then    !LargeMeso surf block
+          IndCav(iP) = 7
+       else                                          !Macro surf block
+          IndCav(iP) = 8
+       end if                                                                
+    end if
+   
+    if (DistMin(iP).le.UltraMax) then      !Ultramicro bulk block
+       IndCav(iP) = 9
+    else if (DistMin(iP).le.MicroMax) then       !Micro bulk block
+       IndCav(iP) = 10
+    else if (DistMin(iP).le.SmallMesoMax) then   !SmallMeso bulk block
+       IndCav(iP) = 11
+    else if (DistMin(iP).le.LargeMesoMax) then   !LargeMeso bulk block
        IndCav(iP) = 12
-     else                                         !Macro bulk block   
+    else                                         !Macro bulk block   
        IndCav(iP) = 13
-     end if
+    end if
 
-   else if (IndCav(iP).eq.3.OR.IndCav(iP).eq.4) then
-     if (DistMin(iP).le.UltraMax) then             !Ultramicro surf block
-        IndCav(iP) = 4
-     else if (DistMin(iP).le.MicroMax) then        !Micro surf block
-        IndCav(iP) = 5
-     else if (DistMin(iP).le.SmallMesoMax) then    !SmallMeso surf block
-        IndCav(iP) = 6
-     else if (DistMin(iP).le.LargeMesoMax) then    !LargeMeso surf block
-        IndCav(iP) = 7
-     else                                          !Macro surf block
-        IndCav(iP) = 8
-     end if
-
-   end if
  end do
 
  if(Accessible) then
