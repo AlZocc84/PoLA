@@ -35,6 +35,12 @@
 !   4-5-6-7-8       surf                                       --> Ne
 !   9-10-11-12-13   vol                                        --> Xe
  if (Print_xyz.eq.1) then
+   write(1,'("# filled                       --> Ar  ")')
+   write(1,'("# excluded because too small   --> Kr  ")')
+   write(1,'("# Non Accessible volume        --> He  ")')
+   write(1,'("# surf                         --> Ne  ")')
+   write(1,'("# vol                          --> Xe  ")')
+   write(1,*)
    write(1,*)nP
    write(1,*)
    iM2 = nR(1)*nR(2)
@@ -67,6 +73,15 @@
 !   8-13   surf and vol macro (Rmin > 50 A)           --> Ca
 
  if (Print_xyz.eq.2) then
+   write(1,'("# filled                                     --> Ar   ")')
+   write(1,'("# excluded because too small                 --> Ar   ")')
+   write(1,'("# Non Accessible volume                      --> He   ")')
+   write(1,'("# surf and vol ultramicro (Rmin < 7 A)       --> Ne   ")')
+   write(1,'("# surf and vol micro (7 < Rmin < 20 A)       --> Kr   ")')
+   write(1,'("# surf and vol small meso (20 < Rmin < 35 A) --> Xe   ")')
+   write(1,'("# surf and vol large meso (35 < Rmin < 50 A) --> Rn   ")')
+   write(1,'("# surf and vol macro (Rmin > 50 A)           --> Ca   ")')
+   write(1,*)
    write(1,*)nP
    write(1,*)
    iM2 = nR(1)*nR(2)
@@ -107,6 +122,20 @@
 !   13     vol macro (Rmin > 50 A)            --> Ba
 
  if (Print_xyz.eq.3) then
+   write(1,'("# filled                             --> Ar   ")')
+   write(1,'("# excluded because too small         --> Ar   ")')
+   write(1,'("# Non Accessible volume              --> Kr   ")')
+   write(1,'("# surf ultramicro (Rmin < 7 A)       --> Li   ")')
+   write(1,'("# surf micro (7 < Rmin < 20 A)       --> Na   ")')
+   write(1,'("# surf small meso (20 < Rmin < 35 A) --> K    ")')
+   write(1,'("# surf large meso (35 < Rmin < 50 A) --> Rb   ")')
+   write(1,'("# surf macro (Rmin > 50 A)           --> Cs   ")')
+   write(1,'("# vol ultramicro (Rmin < 7 A)        --> Be   ")')
+   write(1,'("# vol micro (7 < Rmin < 20 A)        --> Mg   ")')
+   write(1,'("# vol small meso (20 < Rmin < 35 A)  --> Ca   ")')
+   write(1,'("# vol large meso (35 < Rmin < 50 A)  --> Sr   ")')
+   write(1,'("# vol macro (Rmin > 50 A)            --> Ba   ")')
+   write(1,*)
    write(1,*)nP
    write(1,*)
    iM2 = nR(1)*nR(2)

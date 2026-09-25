@@ -1,11 +1,11 @@
- SUBROUTINE Texture(nP,dMesh,nVol,DiamStep,VMinD,Cumulative_VMinD,UltraV,MicroV,SmallMesoV,LargeMesoV,MacroV,TotPorV, &     
-                   surf_computation,DistMin,UltraS,MicroS,SmallMesoS,LargeMesoS,MacroS,Rad,IndCav,Surf,Accessible,IndSurf.surf_computation)
+ SUBROUTINE Texture(nP,dMesh,nVol,DiamStep,VMinD,Cumulative_VMinD,UltraV,MicroV,SmallMesoV,LargeMesoV,MacroV,TotPorV,nR,iM1,iM2, &     
+                   surf_computation,DistMin,UltraS,MicroS,SmallMesoS,LargeMesoS,MacroS,Rad,IndCav,Surf,Accessible,IndSurf)
 
  IMPLICIT NONE
  INTEGER, PARAMETER :: DP = SELECTED_REAL_KIND(14)
- INTEGER, INTENT(IN) :: nVol, surf_computation, nP
+ INTEGER, INTENT(IN) :: nVol, surf_computation, nP, iM1, iM2
  INTEGER, DIMENSION(:), INTENT(INOUT) :: IndCav
- INTEGER, DIMENSION(:), INTENT(IN) :: IndSurf
+ INTEGER, DIMENSION(:), INTENT(IN) :: IndSurf, nR
  REAL(DP), DIMENSION(:), INTENT(INOUT) :: VMinD
  REAL(DP), INTENT(IN) :: DiamStep, dMesh, Rad
  REAL(DP), INTENT(OUT) :: UltraV, MicroV, SmallMesoV, LargeMesoV, MacroV, TotPorV
@@ -13,11 +13,19 @@
  REAL(DP), DIMENSION(:), INTENT(IN) :: DistMin
  REAL(DP), DIMENSION(:), INTENT(OUT) :: Cumulative_VMinD
  REAL(DP), DIMENSION(:), ALLOCATABLE, INTENT(OUT) :: Surf
- LOGICAL, INTENT(IN) :: Accessible, surf_computation
- INTEGER :: iVol, iP, MinD
- REAL(DP) :: NAV, v_block
+ LOGICAL, INTENT(IN) :: Accessible
+ INTEGER :: iVol, iP, MinD, iC, iPNew, iX, iY, iZ, lCube
+ REAL(DP) :: NAV, v_block, D, Dist_X, Dist_Y, Dist_Z, Rad1, XP, YP, ZP, XP1, YP1, ZP1
  REAL(DP), PARAMETER :: Zero=0.0d0, Two=2.0d0
  REAL(DP), PARAMETER :: UltraMax=7.0d0, MicroMax=20.0d0, SmallMesoMax=35.0d0, LargeMesoMax=50.0d0
+ LOGICAL :: Overlap
+ INTERFACE
+   FUNCTION MoveCub(iP,iX,iY,iZ,nR)
+     INTEGER, INTENT(IN) :: iP,iX,iY,iZ
+     INTEGER, DIMENSION(3), INTENT(IN) :: nR
+     INTEGER :: MoveCub
+   END FUNCTION MoveCub
+ END INTERFACE
 
  NAV = Zero
  v_block = dMesh*dMesh*dMesh
@@ -119,7 +127,7 @@
  do iP= 1, nP
     if (IndCav(iP).eq.1.OR.IndCav(iP).eq.2) cycle     !Filled blocks
    
-    if(surface_computaion) then
+    if(surf_computation.eq.1) then
        if (IndSurf(iP).eq.3.OR.IndSurf(iP).eq.4) then
           if (DistMin(iP).le.UltraMax) then             !Ultramicro surf block
              IndCav(iP) = 4
