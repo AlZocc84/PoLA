@@ -13,6 +13,6 @@
      if (Symb.eq."O")   FindRvdW = 1.52d0
      if (Symb.eq."CH")  FindRvdW = 1.9d0
      if (Symb.eq."Si")  FindRvdW = 1.91d0  ! taken from PoreBlazer UFF Atoms
-     if (Symb.eq."ZZ")  FindRvdW = 0.1d0   ! for debug
+     if (Symb.eq."SA")  FindRvdW = 0.1d0   ! for debug
    end
 

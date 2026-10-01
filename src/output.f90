@@ -35,13 +35,13 @@
 !   4-5-6-7-8       surf                                       --> Ne
 !   9-10-11-12-13   vol                                        --> Xe
  if (Print_xyz.eq.1) then
+   write(1,*)nP
+   write(1,*)
    write(1,'("# filled                       --> Ar  ")')
    write(1,'("# excluded because too small   --> Kr  ")')
    write(1,'("# Non Accessible volume        --> He  ")')
    write(1,'("# surf                         --> Ne  ")')
    write(1,'("# vol                          --> Xe  ")')
-   write(1,*)
-   write(1,*)nP
    write(1,*)
    iM2 = nR(1)*nR(2)
    do iP = 1, nP
@@ -73,6 +73,8 @@
 !   8-13   surf and vol macro (Rmin > 50 A)           --> Ca
 
  if (Print_xyz.eq.2) then
+   write(1,*)nP
+   write(1,*)
    write(1,'("# filled                                     --> Ar   ")')
    write(1,'("# excluded because too small                 --> Ar   ")')
    write(1,'("# Non Accessible volume                      --> He   ")')
@@ -81,8 +83,6 @@
    write(1,'("# surf and vol small meso (20 < Rmin < 35 A) --> Xe   ")')
    write(1,'("# surf and vol large meso (35 < Rmin < 50 A) --> Rn   ")')
    write(1,'("# surf and vol macro (Rmin > 50 A)           --> Ca   ")')
-   write(1,*)
-   write(1,*)nP
    write(1,*)
    iM2 = nR(1)*nR(2)
    do iP = 1, nP
@@ -122,6 +122,8 @@
 !   13     vol macro (Rmin > 50 A)            --> Ba
 
  if (Print_xyz.eq.3) then
+   write(1,*)nP
+   write(1,*)
    write(1,'("# filled                             --> Ar   ")')
    write(1,'("# excluded because too small         --> Ar   ")')
    write(1,'("# Non Accessible volume              --> Kr   ")')
@@ -136,8 +138,6 @@
    write(1,'("# vol large meso (35 < Rmin < 50 A)  --> Sr   ")')
    write(1,'("# vol macro (Rmin > 50 A)            --> Ba   ")')
    write(1,*)
-   write(1,*)nP
-   write(1,*)
    iM2 = nR(1)*nR(2)
    do iP = 1, nP
      iC = iP - 1
@@ -147,19 +147,35 @@
      XX = dMesh*(XCub - 0.5)
      YY = dMesh*((YCub + 1) - 0.5)
      ZZ = dMesh*((ZCub + 1) - 0.5)
-     if(IndCav(iP).eq.1) write(1,'("Ar",3f12.6)')XX,YY,ZZ
-     if(IndCav(iP).eq.2) write(1,'("Ar",3f12.6)')XX,YY,ZZ
-     if(IndCav(iP).eq.3) write(1,'("Kr",3f12.6)')XX,YY,ZZ
-     if(IndCav(iP).eq.4) write(1,'("Li",3f12.6)')XX,YY,ZZ
-     if(IndCav(iP).eq.5) write(1,'("Na",3f12.6)')XX,YY,ZZ
-     if(IndCav(iP).eq.6) write(1,'("K",3f12.6)')XX,YY,ZZ
-     if(IndCav(iP).eq.7) write(1,'("Rb",3f12.6)')XX,YY,ZZ
-     if(IndCav(iP).eq.8) write(1,'("Cs",3f12.6)')XX,YY,ZZ
-     if(IndCav(iP).eq.9) write(1,'("Be",3f12.6)')XX,YY,ZZ
-     if(IndCav(iP).eq.10) write(1,'("Mg",3f12.6)')XX,YY,ZZ
-     if(IndCav(iP).eq.11) write(1,'("Ca",3f12.6)')XX,YY,ZZ
-     if(IndCav(iP).eq.12) write(1,'("Sr",3f12.6)')XX,YY,ZZ
-     if(IndCav(iP).eq.13) write(1,'("Ba",3f12.6)')XX,YY,ZZ
+     if(IndCav(iP).eq.1) then
+        write(1,'("Ar",3f12.6)')XX,YY,ZZ
+     elseif(IndCav(iP).eq.2) then
+        write(1,'("Ar",3f12.6)')XX,YY,ZZ
+     elseif(IndCav(iP).eq.3) then
+        write(1,'("Kr",3f12.6)')XX,YY,ZZ
+     elseif(IndCav(iP).eq.4) then
+        write(1,'("Li",3f12.6)')XX,YY,ZZ
+     elseif(IndCav(iP).eq.5) then
+        write(1,'("Na",3f12.6)')XX,YY,ZZ
+     elseif(IndCav(iP).eq.6) then
+        write(1,'("K",3f12.6)')XX,YY,ZZ
+     elseif(IndCav(iP).eq.7) then
+        write(1,'("Rb",3f12.6)')XX,YY,ZZ
+     elseif(IndCav(iP).eq.8) then
+        write(1,'("Cs",3f12.6)')XX,YY,ZZ
+     elseif(IndCav(iP).eq.9) then
+        write(1,'("Be",3f12.6)')XX,YY,ZZ
+     elseif(IndCav(iP).eq.10) then
+        write(1,'("Mg",3f12.6)')XX,YY,ZZ
+     elseif(IndCav(iP).eq.11) then
+        write(1,'("Ca",3f12.6)')XX,YY,ZZ
+     elseif(IndCav(iP).eq.12) then
+        write(1,'("Sr",3f12.6)')XX,YY,ZZ
+     elseif(IndCav(iP).eq.13) then
+        write(1,'("Ba",3f12.6)')XX,YY,ZZ
+     else
+        write(1,'("UK",3f12.6)')XX,YY,ZZ
+     end if
    end do
  end if
 

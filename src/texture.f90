@@ -126,21 +126,27 @@
 
  do iP= 1, nP
     if (IndCav(iP).eq.1.OR.IndCav(iP).eq.2) cycle     !Filled blocks
+    
+    !DEBUG_29_30_2026-----------------------
+    !write(6,'("The block ",i7," has IndCav= ",i3, "and has DistMin = ",f12.6)') iP, IndCav(iP), DistMin(iP)
+    !DEBUG_29_30_2026-----------------------
    
-    if(surf_computation.eq.1) then
-       if (IndSurf(iP).eq.3.OR.IndSurf(iP).eq.4) then
-          if (DistMin(iP).le.UltraMax) then             !Ultramicro surf block
-             IndCav(iP) = 4
-          else if (DistMin(iP).le.MicroMax) then        !Micro surf block
-             IndCav(iP) = 5
-          else if (DistMin(iP).le.SmallMesoMax) then    !SmallMeso surf block
-             IndCav(iP) = 6
-          else if (DistMin(iP).le.LargeMesoMax) then    !LargeMeso surf block
-             IndCav(iP) = 7
-          else                                          !Macro surf block
-             IndCav(iP) = 8
-          end if                                                                
-       end if
+    if (IndSurf(iP).eq.3.OR.IndSurf(iP).eq.4) then
+       if (DistMin(iP).le.UltraMax) then             !Ultramicro surf block
+          IndCav(iP) = 4
+       else if (DistMin(iP).le.MicroMax) then        !Micro surf block
+          IndCav(iP) = 5
+       else if (DistMin(iP).le.SmallMesoMax) then    !SmallMeso surf block
+          IndCav(iP) = 6
+       else if (DistMin(iP).le.LargeMesoMax) then    !LargeMeso surf block
+          IndCav(iP) = 7
+       else                                          !Macro surf block
+          IndCav(iP) = 8
+       end if                                                                
+       
+       !DEBUG_29_30_2026-----------------------
+       write(6,'("The block is in the surface, so the New IndCav= ",i3)') IndCav(iP)
+       !DEBUG_29_30_2026-----------------------
 
     elseif (IndCav(iP).ne.3) then
 
@@ -155,6 +161,9 @@
           else                                         !Macro bulk block   
              IndCav(iP) = 13
           end if
+       !DEBUG_29_30_2026-----------------------
+       write(6,'("The block is NOT in the surface, so the New IndCav= ",i3)') IndCav(iP)
+       !DEBUG_29_30_2026-----------------------
     end if
  end do
 

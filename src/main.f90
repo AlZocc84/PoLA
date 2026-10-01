@@ -126,9 +126,9 @@ program pore_local_analysis
  allocate(Cumulative_VMinD(nVol),VMinD(nVol))
 
 !---------- DEBUG_ALL_DIST_11-06-2026-----------------
- allocate(all_distances(nP,240))
- all_distances = Zero
- count_void = 0
+! allocate(all_distances(nP,240))
+! all_distances = Zero
+! count_void = 0
 !---------- DEBUG_ALL_DIST_11-06-2026-----------------
 
  VMinD = Zero
@@ -152,9 +152,9 @@ program pore_local_analysis
      cycle
    end if
 !---------- DEBUG_ALL_DIST_11-06-2026-----------------
-   count_void = count_void +1
-   all_distances(count_void,1) = (iP*1.0)
-   count_d = 1
+!   count_void = count_void +1
+!   all_distances(count_void,1) = (iP*1.0)
+!   count_d = 1
 !---------- DEBUG_ALL_DIST_11-06-2026-----------------
 
 ! RMin_temp/RMax will be the shortest/longest distances between opposite walls for this point
@@ -177,8 +177,8 @@ program pore_local_analysis
        Call Find_Wall(iP,iPN,nR,dMesh,XCub,YCub,ZCub,dX,dY,dZ,IndCav,Found,RN)
 
 !---------- DEBUG_ALL_DIST_11-06-2026-----------------
-       count_d = count_d+1
-       all_distances(count_void,count_d) = RN      
+!       count_d = count_d+1
+!       all_distances(count_void,count_d) = RN      
 !---------- DEBUG_ALL_DIST_11-06-2026-----------------
 
        if(.not.Found) cycle
@@ -190,8 +190,8 @@ program pore_local_analysis
        Call Find_Wall(iP,iPNopp,nR,dMesh,XCub,YCub,ZCub,dX,dY,dZ,IndCav,Found,Ropp)
 
 !---------- DEBUG_ALL_DIST_11-06-2026-----------------
-       count_d = count_d+1
-       all_distances(count_void,count_d) = Ropp    
+!       count_d = count_d+1
+!       all_distances(count_void,count_d) = Ropp    
 !---------- DEBUG_ALL_DIST_11-06-2026-----------------
 
        if(.not.Found) cycle
@@ -216,19 +216,32 @@ program pore_local_analysis
      IndCav(iP) = 2
      cycle
 !---------- DEBUG_ALL_DIST_11-06-2026-----------------
-   else
-     write(2,'(i20,240(",",1x,f12.6))') int(all_distances(count_void,1)), all_distances(count_void,2:241)
+!   else
+!     write(2,'(i20,240(",",1x,f12.6))') int(all_distances(count_void,1)), all_distances(count_void,2:241)
 !---------- DEBUG_ALL_DIST_11-06-2026-----------------
    end if
  end do
  close(1)
  close(2)
+
+!DEBUG_29_09------------------------------------------
+! write(6,'("After the loop on blocks IndCav(133427) = ",i3)') IndCav(133427) 
+!DEBUG_29_09------------------------------------------
+
 ! Compute skeletal density
  call Skel_Dens(dMesh,nP,IndCav,nAtm,AtmSym,SkV,SkM,SkD)
  
  ! Compute specific surface
  call Surface(Surf_Computation,dMesh,nR,nP,Rad,SurfCenter,nS,nMono_dens,IndSurf) 
  
+!DEBUG_29_09------------------------------
+! open(1,file='distance_pre_texture.txt',status='unknown',form='formatted')
+! do iP =1, nP
+!   write(1,'(" ",i7,"   ",i3,"   ",i3,"   ",i3,"   ",f8.4)') iP, XCub, YCub, ZCub, DistMin(iP)
+! end do
+! close(1)
+!DEBUG_29_09------------------------------
+
 ! Compute porous volumes
  call Texture(nP,dMesh,nVol,DiamStep,VMinD,Cumulative_VMinD,UltraV,MicroV,SmallMesoV,LargeMesoV,MacroV,TotPorV,nR,iM1,iM2,&     
                    surf_computation,DistMin,UltraS,MicroS,SmallMesoS,LargeMesoS,MacroS,Rad,IndCav,Surf,Accessible,IndSurf)

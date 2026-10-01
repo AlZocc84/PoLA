@@ -37,6 +37,8 @@
        SkM = SkM + 14.0d0
      elseif(AtmSym(iAtm).eq."Si") then
        SkM = SkM + 28.0d0
+     elseif(AtmSym(iAtm).eq."SA") then
+       SkM = SkM + 100.0d0
      else
        write(6,'("SkM not defined for ",a2)') AtmSym(iAtm)
        stop
