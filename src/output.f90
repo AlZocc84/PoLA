@@ -1,6 +1,6 @@
  SUBROUTINE Output(dMesh,nR,nP,nVol,IndCav,DiamStep,Cumulative_VMinD,VMinD,Accessible, &
              UltraV,MicroV,SmallMesoV,LargeMesoV,MacroV,TotPorV,SkV,SkM,SkD,Print_xyz, &
-             Rad,surf_computation,UltraS,MicroS,SmallMesoS,LargeMesoS,MacroS,nMono_dens)
+             Rad,surf_computation,UltraS,MicroS,SmallMesoS,LargeMesoS,MacroS,nMono_dens,MonoVol)
  
  IMPLICIT NONE
  INTEGER, PARAMETER :: DP = SELECTED_REAL_KIND(14)
@@ -10,13 +10,16 @@
  INTEGER :: iP, iC, iM2, XCub, YCub, ZCub, iVol
  REAL(DP), INTENT(IN) :: dMesh, DiamStep, SkV, SkM, SkD
  REAL(DP), INTENT(IN) :: UltraV, MicroV, SmallMesoV, LargeMesoV, MacroV, TotPorV
- REAL(DP), INTENT(IN) :: UltraS, MicroS, SmallMesoS, LargeMesoS, MacroS, Rad
+ REAL(DP), INTENT(IN) :: UltraS, MicroS, SmallMesoS, LargeMesoS, MacroS, Rad, MonoVol
  REAL(DP), DIMENSION(:), INTENT(IN) :: Cumulative_VMinD, VMinD
  REAL(DP) :: XX, YY, ZZ, MinD, vMesh, vTot, Fact, Fact_sup, Surf_convert
  REAL(DP), PARAMETER :: gMol_A3_to_g_cm3 = 1.6606d0 ! Conversion from g mol-1 A-3 to g cm-3 = 1/0.6022
  REAL(DP), PARAMETER :: A3_gMol_to_cm3_g = 0.6022d0 ! Conversion from A^3/(g mol-1) to cm^3 / g
  REAL(DP), PARAMETER :: A2_to_m2_mol = 6.022d3 ! Conversion from A2/cell to m2/mol
  REAL(DP), PARAMETER :: N2_cross = 6.022 * 1.62 * 1.0d4 ! Conversion from monolayer mol/g to m2/g
+!debug-----------------------------
+ REAL(DP) :: nMon1
+!debug-----------------------------
  LOGICAL, INTENT(IN) :: Accessible
 
 ! Write the results
@@ -182,7 +185,11 @@
 ! The VMinD analysis; Fact converts A3 to cm3/g
  Fact = A3_gMol_to_cm3_g / SkM
  Fact_sup= 3.570795*Rad*Rad
- Surf_convert = (A3_gMol_to_cm3_g * 0.808)/28
+ Surf_convert = (A3_gMol_to_cm3_g * 0.808d0)/28.0d0
+!Debug--------------------------------------
+ write(6,'("Surf_convert = ",f17.15)') Surf_convert
+ nMon1 = (0.808d0*MonoVol*0.6022d0)/28.0d0
+!DEBUG--------------------------------------
 
  MinD = 0.0d0
  do iVol = 1, nVol
@@ -252,27 +259,39 @@
  
  if(Surf_Computation.eq.1) then
    write(7,*)
-   write(7,'("Total surface (m^2/g) (liquid nitrogen monolayer)   ",f10.1)') nMono_dens * N2_cross / SkM
+  !debug----------------------------------
+   write(7,'("Total surface (m^2/g) (calculated from MonoVol) / MonoVol(A^3)  ",f10.1,"  ",f17.1)') &
+                                                                           Surf_convert*MonoVol * N2_cross / SkM, MonoVol
+   write(7,'("Monolayer volume (A^3) (calculated without INT) nMon1  ",f10.1)')  nMon1
+   write(7,'("Total surface (m^2/g) (calculated from nMon1) / nMon1/surfconvert  ",f10.1,"  ",f17.1)') &
+                                                                           nMon1 * N2_cross / SkM, nMon1/Surf_convert
+  !DEBUG------------------------------------
+
+   write(7,'("Total surface (m^2/g) (liquid nitrogen monolayer) /VmonoA3  ",f10.1,"  ",f17.1)') &
+                                                                           nMono_dens * N2_cross / SkM, nMono_dens/Surf_convert
    write(7,*)
-   write(7,'("                                                        with MinD < 7 A    ",f8.3)') &
-                                                                      Surf_convert * UltraS * N2_cross / SkM
+   write(7,'("                                                        with MinD < 7 A    ",f8.3,"  ",f17.1)') &
+                                                                      Surf_convert * UltraS * N2_cross / SkM, Ultras
    write(7,'("                                                      /")')
-   write(7,'("Surface [m^2/g] with MinD < 20 A   ",f10.3," ---- of which ")') Surf_convert * (UltraS+MicroS) * N2_cross / SkM
+   write(7,'("Surface [m^2/g] with MinD < 20 A   ",f10.3,"  ",f17.1," ---- of which ")') &
+                                                                                 Surf_convert * (UltraS+MicroS) * N2_cross / SkM &
+                                                                                              , (UltraS+MicroS)  
    write(7,'("                                                      \")')
-   write(7,'("                                                        with 7 A < MinD < 20 A      ",f8.3)') &
-                                                                      Surf_convert * MicroS * N2_cross / SkM
+   write(7,'("                                                        with 7 A < MinD < 20 A      ",f8.3,"  ",f17.1)') &
+                                                                      Surf_convert * MicroS * N2_cross / SkM, MicroS
     
    write(7,*)
-   write(7,'("                                                        with 20 A < MinD < 35 A   ",f8.3)') &
-                                                                      Surf_convert * SmallMesoS * N2_cross / SkM
+   write(7,'("                                                        with 20 A < MinD < 35 A   ",f8.3,"  ",f17.1)') &
+                                                                      Surf_convert * SmallMesoS * N2_cross / SkM, SmallMesoS
    write(7,'("                                                      /")')
-   write(7,'("Surface [m^2/g] with 20 < MinD < 50 A ",f10.3," ---- of which ")') Surf_convert*(SmallMesoS+LargeMesoS)*N2_cross/SkM
+   write(7,'("Surface [m^2/g] with 20 < MinD < 50 A ",2f10.3," -- of which ")') Surf_convert*(SmallMesoS+LargeMesoS)*N2_cross/SkM &
+                                                                                             , SmallMesoS+LargeMesoS
    write(7,'("                                                      \")')
-   write(7,'("                                                        with 35 < MinD < 50 A   ",f8.3)') &
-                                                                      Surf_convert * LargeMesoS * N2_cross / SkM
+   write(7,'("                                                        with 35 < MinD < 50 A   ",2f8.3)') &
+                                                                      Surf_convert * LargeMesoS * N2_cross / SkM, LargeMesoS
                                                                                                                                 
    write(7,*)
-   write(7,'("Surface [m^2/g] with MinD > 50 A   ",f10.3)') Surf_convert * MacroS * N2_cross / SkM
+   write(7,'("Surface [m^2/g] with MinD > 50 A   ",f10.3,"  ",f8.3)') Surf_convert * MacroS * N2_cross / SkM, MacroS
                                                                                                                                 
    write(7,*)                                                                                                                   
 

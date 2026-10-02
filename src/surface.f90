@@ -1,18 +1,18 @@
- SUBROUTINE Surface(Surf_Computation,dMesh,nR,nP,Rad,SurfCenter,nS,nMono_dens,IndSurf)
+ SUBROUTINE Surface(Surf_Computation,dMesh,nR,nP,Rad,MonoVol,nMono_dens,IndSurf)
 
  IMPLICIT NONE
 
  INTEGER, PARAMETER :: DP = SELECTED_REAL_KIND(14)
 
  INTEGER, INTENT(IN) :: Surf_Computation, nP 
- INTEGER, INTENT(OUT) :: nS, nMono_dens
+ INTEGER, INTENT(OUT) :: nMono_dens 
  INTEGER, DIMENSION(3), INTENT(IN) :: nR
  INTEGER, DIMENSION(:), INTENT(INOUT) :: IndSurf
- INTEGER, DIMENSION(:), ALLOCATABLE, INTENT(OUT) :: SurfCenter
  REAL(DP), INTENT(IN) :: dMesh, Rad
+ REAL(DP), INTENT(OUT) :: MonoVol
 
  REAL(DP) :: XP, YP, ZP, XP1, YP1, ZP1, Rad1
- REAL(DP) :: Dist_X, Dist_Y, Dist_Z, D, MonoVol
+ REAL(DP) :: Dist_X, Dist_Y, Dist_Z, D
  REAL(DP), PARAMETER :: N2_Density = 0.808d0
 
 INTEGER :: iP, iPNew, iC, iX, iY, iZ, lCube, iM2
@@ -35,18 +35,14 @@ Logical :: Overlap, Touch
 ! The probe overlaps to blocks falling inside Rad, and "touches" blocks falling between Rad and Rad1.
 ! Blocks touched by the probe contribute to the porous surface.
 
-!SurfCenter is a VcT with all the boxes that are the center of the spherical probes
-!so at the beginning the first element is -1
- allocate(SurfCenter(nP))
- SurfCenter(1) = -1
-
- nS = 0       ! Number of blocks that are the center of the spherical probes
-
  iM2 = nR(1) * nR(2)
  Rad1 = Rad + 0.6*dMesh
 
  do iP = 1, nP
 ! Loop only on void blocks
+! (At beginning IndSurf = 0: void block, IndSurf = -1: filled block)
+! During the subroutine: IndSurf = 1: block center of a probe, IndSurf = 2: block in the suface layer
+
    if(IndSurf(iP).ne.0) cycle
 ! Find the block Cartesian coordinates
    iC = iP - 1
@@ -65,8 +61,8 @@ Logical :: Overlap, Touch
        do iZ = -lCube,lCube
          if(Overlap) exit
          iPNew = MoveCub(iP, iX, iY, iZ, nR)
-! Skip if the new block is void (IndSurf=0) or has already been classified as occupiable (IndSurf=3)
-         if (IndSurf(iPNew).eq.0.or.IndSurf(iPNew).eq.3) cycle
+! Skip if the new block is void (IndSurf=0) or has already been classified as occupiable (IndSurf=1)
+         if (IndSurf(iPNew).eq.0.or.IndSurf(iPNew).eq.1) cycle
 ! Find the coordinates of the new block
          iC = iPNew - 1
          ZP1 = INT(iC/(iM2))*dMesh + dMesh/2.0d0
@@ -95,17 +91,14 @@ Logical :: Overlap, Touch
 
 ! If this probe touched some blocks, and it was not overlapped, change the IndSurf of the surface blocks
    if (Touch .AND. .not.Overlap) then
-     nS = nS + 1
-     IndSurf(iP) = 3
-     SurfCenter(nS) = iP
-     SurfCenter(nS+1) = -1
+     IndSurf(iP) = 1
    end if
  end do 
 
 ! Compute the number of void blocks belonging to one of the spherical probes which form the surface monolayer
  do iP = 1, nP
-! Loop only on blocks which could host the center of a probe touching the surface (occupiable blocks)
-   if(IndSurf(iP).ne.3) cycle
+! Loop only on blocks which could host the center of a probe touching the surface 
+   if(IndSurf(iP).ne.1) cycle
 ! Find the block Cartesian coordinates
    iC = iP - 1
    ZP = INT(iC/(iM2))*dMesh + dMesh/2.0d0
@@ -139,7 +132,7 @@ Logical :: Overlap, Touch
           D = sqrt(Dist_X*Dist_X + Dist_Y*Dist_Y + Dist_Z*Dist_Z)
  ! If the distance is lower than Rad, so that this block would fall inside one of the spherical probes
  ! forming the surface monolayer, its IndSurf is _temporarily_ set to 4
-          if (D.le.Rad) IndSurf(iPNew) = 4                                                          ! comment to here
+          if (D.le.Rad) IndSurf(iPNew) = 2                                                          ! comment to here
        end do
      end do
    end do
@@ -150,11 +143,15 @@ Logical :: Overlap, Touch
  do iP = 1, nP
 ! If the block belongs to the monolayer (IndSurf=3 is the center of a probe, 
 ! IndSurf=4 is falling inside some probe) increment the monolayer volume
-   if (IndSurf(iP).eq.3 .OR. IndSurf(iP).eq.4) MonoVol = MonoVol + dMesh*dMesh*dMesh
+   if (IndSurf(iP).eq.1 .OR. IndSurf(iP).eq.2) MonoVol = MonoVol + dMesh*dMesh*dMesh
  end do
 
 ! Find the number of spherical probes forming the monolayer
 ! This if we use the liquid N2 density to estimate the molecules in the monolayer
  nMono_dens = INT(N2_density * 0.6022d0 * MonoVol / 28.0d0)
+
+!DEBUG-----------
+write(6,'("V_mono in surface= ",f17.1)') MonoVol
+write(6,'("Convert in surface = ",f17.15)') (N2_density * 0.6022d0 / 28.0d0)
 
  end

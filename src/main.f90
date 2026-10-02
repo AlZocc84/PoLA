@@ -7,9 +7,9 @@ program pore_local_analysis
  IMPLICIT NONE
 
  INTEGER, PARAMETER :: DP = SELECTED_REAL_KIND(14)
- INTEGER, DIMENSION(:), ALLOCATABLE :: IndCav, SurfCenter, IndSurf
+ INTEGER, DIMENSION(:), ALLOCATABLE :: IndCav, IndSurf
  INTEGER :: i, iP, nP, nAtm, iPN, iPNopp, nMono_dens, n_angles, MinD
- INTEGER ::  iM1, iM2, XCub, YCub, ZCub, iC, Print_xyz, nVol, nS, surf_computation
+ INTEGER ::  iM1, iM2, XCub, YCub, ZCub, iC, Print_xyz, nVol, surf_computation
  INTEGER, DIMENSION(3) :: nR
  REAL(DP), PARAMETER :: Zero=0.0d0, One=1.0d0, Two=2.0d0, Three=3.0d0, Four=4.0d0, Six=6.0d0
  REAL(DP), PARAMETER :: UltraMax=7.0d0, MicroMax=20.0d0, SmallMesoMax=35.0d0, LargeMesoMax=50.0d0
@@ -20,7 +20,7 @@ program pore_local_analysis
  REAL(DP) :: UltraS, MicroS, SmallMesoS, LargeMesoS, MacroS
  REAL(DP) :: dX, dY, dZ, R, RMin, RMin_temp, RMax, RN, Ropp
  REAL(DP) :: dMesh, v_block, DiamStep, Closed_Thresh, MaxDiameter
- REAL(DP) :: SkV, SkM, SkD, Rad
+ REAL(DP) :: SkV, SkM, SkD, Rad, MonoVol
 
 !---------- DEBUG_ALL_DIST_11-06-2026-----------------
  REAL(DP), DIMENSION(:,:), ALLOCATABLE:: all_distances
@@ -62,17 +62,17 @@ program pore_local_analysis
      REAL(DP), INTENT(OUT) :: SkV, SkM, SkD
      CHARACTER(2), DIMENSION(:), INTENT(IN) :: AtmSym
    END SUBROUTINE Skel_Dens
-     SUBROUTINE Surface(Surf_Computation,dMesh,nR,nP,Rad,SurfCenter,nS,nMono_dens,IndSurf)
+     SUBROUTINE Surface(Surf_Computation,dMesh,nR,nP,Rad,MonoVol,nMono_dens,IndSurf)
      IMPLICIT NONE
 
      INTEGER, PARAMETER :: DP = SELECTED_REAL_KIND(14)
 
      INTEGER, INTENT(IN) :: Surf_Computation, nP                                                                                                      
-     INTEGER, INTENT(OUT) :: nS, nMono_dens
+     INTEGER, INTENT(OUT) :: nMono_dens
      INTEGER, DIMENSION(3), INTENT(IN) :: nR
      INTEGER, DIMENSION(:), INTENT(INOUT) :: IndSurf
-     INTEGER, DIMENSION(:), ALLOCATABLE, INTENT(OUT) :: SurfCenter
      REAL(DP), INTENT(IN) :: dMesh, Rad
+     REAL(DP), INTENT(OUT) :: MonoVol
 
    END SUBROUTINE Surface                                             
    SUBROUTINE Texture(nP,dMesh,nVol,DiamStep,VMinD,Cumulative_VMinD,UltraV,MicroV,SmallMesoV,LargeMesoV,MacroV,TotPorV,nR,iM1,iM2, &                                   
@@ -93,14 +93,14 @@ program pore_local_analysis
    END SUBROUTINE Texture
    SUBROUTINE Output(dMesh,nR,nP,nVol,IndCav,DiamStep,Cumulative_VMinD,VMinD,Accessible, &
              UltraV,MicroV,SmallMesoV,LargeMesoV,MacroV,TotPorV,SkV,SkM,SkD,Print_xyz, &
-             Rad,surf_computation,UltraS,MicroS,SmallMesoS,LargeMesoS,MacroS,nMono_dens)
+             Rad,surf_computation,UltraS,MicroS,SmallMesoS,LargeMesoS,MacroS,nMono_dens,MonoVol)
      INTEGER, PARAMETER :: DP = SELECTED_REAL_KIND(14)
      INTEGER, DIMENSION(:), INTENT(IN) :: IndCav
      INTEGER, INTENT(IN) :: nP, nVol, Print_xyz, surf_computation, nMono_dens
      INTEGER, DIMENSION(3), INTENT(IN) :: nR
      REAL(DP), INTENT(IN) :: dMesh, DiamStep, SkV, SkM, SkD
      REAL(DP), INTENT(IN) :: UltraV, MicroV, SmallMesoV, LargeMesoV, MacroV, TotPorV
-     REAL(DP), INTENT(IN) :: UltraS, MicroS, SmallMesoS, LargeMesoS, MacroS, Rad
+     REAL(DP), INTENT(IN) :: UltraS, MicroS, SmallMesoS, LargeMesoS, MacroS, Rad, MonoVol 
      REAL(DP), DIMENSION(:), INTENT(IN) :: Cumulative_VMinD, VMinD
      LOGICAL, INTENT(IN) :: Accessible
    END SUBROUTINE Output
@@ -214,6 +214,7 @@ program pore_local_analysis
 ! by adsorbates, then this block becomes "filled" and is not considered in the porous volume analysis
    if(RMax.gt.Zero.AND.RMax.lt.Closed_Thresh) then
      IndCav(iP) = 2
+     IndSurf(iP) = -1
      cycle
 !---------- DEBUG_ALL_DIST_11-06-2026-----------------
 !   else
@@ -232,7 +233,7 @@ program pore_local_analysis
  call Skel_Dens(dMesh,nP,IndCav,nAtm,AtmSym,SkV,SkM,SkD)
  
  ! Compute specific surface
- call Surface(Surf_Computation,dMesh,nR,nP,Rad,SurfCenter,nS,nMono_dens,IndSurf) 
+ call Surface(Surf_Computation,dMesh,nR,nP,Rad,MonoVol,nMono_dens,IndSurf) 
  
 !DEBUG_29_09------------------------------
 ! open(1,file='distance_pre_texture.txt',status='unknown',form='formatted')
@@ -256,7 +257,7 @@ program pore_local_analysis
 ! Write the results
  call Output(dMesh,nR,nP,nVol,IndCav,DiamStep,Cumulative_VMinD,VMinD,Accessible, &
              UltraV,MicroV,SmallMesoV,LargeMesoV,MacroV,TotPorV,SkV,SkM,SkD,Print_xyz, &
-             Rad,surf_computation,UltraS,MicroS,SmallMesoS,LargeMesoS,MacroS,nMono_dens)
+             Rad,surf_computation,UltraS,MicroS,SmallMesoS,LargeMesoS,MacroS,nMono_dens,MonoVol)
 
  stop
  end

@@ -19,6 +19,7 @@
  REAL(DP), PARAMETER :: Zero=0.0d0, Two=2.0d0
  REAL(DP), PARAMETER :: UltraMax=7.0d0, MicroMax=20.0d0, SmallMesoMax=35.0d0, LargeMesoMax=50.0d0
  LOGICAL :: Overlap
+ LOGICAL, DIMENSION(:), ALLOCATABLE :: NAccVol
  INTERFACE
    FUNCTION MoveCub(iP,iX,iY,iZ,nR)
      INTEGER, INTENT(IN) :: iP,iX,iY,iZ
@@ -31,22 +32,24 @@
  v_block = dMesh*dMesh*dMesh
  Rad1 = Rad+(dMesh*0.1)
 
-! Assign the block to the suitable pore set
-! Volumes associated to RMin are not added to VMinD
-! At this point is the total volume (accessible and not accessible)
- do iP=1,nP
-   if(IndCav(iP).ne.0) cycle
-   MinD = INT(DistMin(iP)/DiamStep) + 1
-   VMinD(MinD) = VMinD(MinD) + v_block 
+! Allocate the array for the NOT Accessible Volume. 
+! NAccVal= False : ISN'T NOT Accessible Volume 
+! (Can be a filled block, or Accessible)
 
-   !Compute the Accessible volume, if required
-   if(Accessible) then
+ allocate(NAccVol(nP))
+ NAccVol = .False.
+
+!Compute the Accessible volume, if required
+ if(Accessible) then
+   do iP=1,nP
+     if(IndCav(iP).ne.0) cycle
+
      ! Find the block Cartesian coordinates
      iC = iP - 1
      ZP = INT(iC/(iM2))*dMesh + dMesh/2.0d0
      YP = INT(MOD(iC,iM2)/nR(1))*dMesh + dMesh/2.0d0
      XP = MOD(MOD(iC,iM2),nR(1))*dMesh + dMesh/2.0d0
-     ! Check all the blocks that could fall inside Rad or Rad1. 
+     ! Check all the blocks that are closer than Rad1. 
      Overlap = .False.  !If TRUE this probe overlaps to the wall (then it will be considered Not Accessible)
 
      lCube = nint(Rad1 / dMesh) + 1
@@ -57,7 +60,7 @@
          do iZ = -lCube,lCube
            if(Overlap) exit
            iPNew = MoveCub(iP, iX, iY, iZ, nR)
-           ! Skip if the new block is void (IndSurf=0) or has already been classified as occupiable (IndSurf=3)
+           ! Skip if the new block is void (IndCav=0) or has already been classified as Not Accessible (IndCav=3)
            if (IndCav(iPNew).eq.0.or.IndCav(iPNew).eq.3) cycle
            ! Find the coordinates of the new block
            iC = iPNew - 1
@@ -77,19 +80,27 @@
            ! Compute the actual distance
            D = sqrt(Dist_X*Dist_X + Dist_Y*Dist_Y + Dist_Z*Dist_Z)
          
-           ! If D is lower than Rad the block overlaps with the probe, and it will be discarded later
+           ! If D is lower than Rad the block overlaps with the probe, and it is part of the Not Accessible volume
            if (D.le.Rad1) then
               Overlap = .True.
               IndCav(iP) = 3
-              VMinD(MinD) = VMinD(MinD) - v_block 
+              NAccVol(iP) = .True. 
            end if
 
          end do
        end do
      end do
 
-   end if
+   end do
+ end if
+
+!___DEBUG____
+ open(1,file='IndCav_pre.txt',status='unknown',form='formatted')
+ do iP = 1, nP
+   write(1,'("IndCav(",i20,") = ",i5)') iP, IndCav(iP)
  end do
+ close(1)
+!___DEBUG____
 
 ! Compute simplified, total cumulative volumes and surface
  TotPorV = Zero
@@ -131,7 +142,7 @@
     !write(6,'("The block ",i7," has IndCav= ",i3, "and has DistMin = ",f12.6)') iP, IndCav(iP), DistMin(iP)
     !DEBUG_29_30_2026-----------------------
    
-    if (IndSurf(iP).eq.3.OR.IndSurf(iP).eq.4) then
+    if (IndSurf(iP).eq.1.OR.IndSurf(iP).eq.2) then   !Are part of the surface
        if (DistMin(iP).le.UltraMax) then             !Ultramicro surf block
           IndCav(iP) = 4
        else if (DistMin(iP).le.MicroMax) then        !Micro surf block
@@ -145,7 +156,7 @@
        end if                                                                
        
        !DEBUG_29_30_2026-----------------------
-       write(6,'("The block is in the surface, so the New IndCav= ",i3)') IndCav(iP)
+       !write(6,'("The block is in the surface, so the New IndCav= ",i3)') IndCav(iP)
        !DEBUG_29_30_2026-----------------------
 
     elseif (IndCav(iP).ne.3) then
@@ -162,41 +173,83 @@
              IndCav(iP) = 13
           end if
        !DEBUG_29_30_2026-----------------------
-       write(6,'("The block is NOT in the surface, so the New IndCav= ",i3)') IndCav(iP)
+       !write(6,'("The block is NOT in the surface, so the New IndCav= ",i3)') IndCav(iP)
        !DEBUG_29_30_2026-----------------------
     end if
  end do
 
-!  Assign the block to the suitable surface set
-  do iP = 1,nP
-   if(IndCav(iP).ge.4.AND.IndCav(iP).le.8) then
-     MinD = INT(DistMin(iP)/DiamStep) + 1
-     Surf(MinD) = Surf(MinD) + v_block
+!___DEBUG____
+ open(1,file='IndCav_post.txt',status='unknown',form='formatted')
+ do iP = 1, nP
+   write(1,'("IndCav(",i20,") = ",i5)') iP, IndCav(iP)
+ end do
+ close(1)
+!___DEBUG____
+
+!  Fill VMinD array with the accessible volume  
+ do iP = 1,nP
+   if(IndCav(iP).eq.0) then     ! At this point all blocks should have IndCav different from 0, otherwise there is an error and the program is stopped
+     write(6,'("IndCav of block ",i20," is 0")') iP
+     write(6,'("At this point this should not happen.")')
+     write(6,'("Program stopped.")')
+     stop
+   else if (IndCav(iP).eq.1.OR.IndCav(iP).eq.2) then ! Skip the filled blocks (1,2) 
+     cycle
+   end if
+    
+   if(.not.(NAccVol(iP))) then           ! VMinD is filled only with Accessible volume
+     MinD = DistMin(iP) 
+     iVol = INT(MinD/DiamStep) + 1
+     VMinD(iVol) = VMinD(iVol) + v_block 
    end if
  end do
 
-  ! compute total distribution of VMinD for volume and surface
- do iVol = 1, nVol
-   MinD = iVol * DiamStep
-   if(MinD.le.UltraMax) then
-     UltraV = UltraV + VMinD(iVol)
-     UltraS = UltraS + Surf(iVol)
-   elseif(MinD.le.MicroMax) then
-     MicroV = MicroV + VMinD(iVol)
-     MicroS = MicroS + Surf(iVol)
-   elseif(MinD.le.SmallMesoMax) then
-     SmallMesoV = SmallMesoV + VMinD(iVol)
-     SmallMesoS = SmallMesoS + Surf(iVol)
-   elseif(MinD.le.LargeMesoMax) then
-     LargeMesoV = LargeMesoV + VMinD(iVol)
-     LargeMesoS = LargeMesoS + Surf(iVol)
-   else
-     MacroV = MacroV + VMinD(iVol)
-     MacroS = MacroS + Surf(iVol)
+ ! Compute the volume of each classification (UltraMicro, Micro etc.)
+ ! The UltraMicro volume is given by the ultramicro bulk (IndCav=9) and by the ACCESSIBLE volume of the ultamicro surface (IndCav=4 and not NaccVol)
+ ! (and the same for all the other classifications)
+ do iP= 1, nP
+   if((IndCav(iP).eq.9).OR.(IndCav(iP).eq.4.AND.(.not.NaccVol(iP)))) then
+     UltraV = UltraV + v_block    
+   elseif((IndCav(iP).eq.10).OR.(IndCav(iP).eq.5.AND.(.not.NaccVol(iP)))) then
+     MicroV = MicroV + v_block    
+   elseif((IndCav(iP).eq.11).OR.(IndCav(iP).eq.6.AND.(.not.NaccVol(iP)))) then
+     SmallMesoV = SmallMesoV + v_block    
+   elseif((IndCav(iP).eq.12).OR.(IndCav(iP).eq.7.AND.(.not.NaccVol(iP)))) then
+     LargeMesoV = LargeMesoV + v_block    
+   elseif((IndCav(iP).eq.13).OR.(IndCav(iP).eq.8.AND.(.not.NaccVol(iP)))) then
+     MacroV = MacroV + v_block    
    end if
+ end do
+
+ do iP= 1, nP
+ ! Compute the surface volume of each classification (UltraMicro, Micro etc.)
+ !  And Surf(iVol) is filled
+   if(IndCav(iP).eq.4) then
+     UltraS = UltraS + v_block    
+     Surf(iVol) = Surf(iVol) + v_block
+   elseif(IndCav(iP).eq.5) then
+     MicroS = MicroS + v_block    
+     Surf(iVol) = Surf(iVol) + v_block
+   elseif(IndCav(iP).eq.6) then
+     SmallMesoS = SmallMesoS + v_block    
+     Surf(iVol) = Surf(iVol) + v_block
+   elseif(IndCav(iP).eq.7) then
+     LargeMesoS = LargeMesoS + v_block    
+     Surf(iVol) = Surf(iVol) + v_block
+   elseif(IndCav(iP).eq.8) then
+     MacroS = MacroS + v_block    
+     Surf(iVol) = Surf(iVol) + v_block
+   end if
+ end do
+
+  ! compute the total volume and the Cumulative VMinD
+ do iVol = 1, nVol
    TotPorV = TotPorV + VMinD(iVol)
    Cumulative_VMinD(iVol) = TotPorV
  end do
 
+!DEBUG------------------------
+ write(6,'("Sum of surface in texture: ", f17.1)') UltraS+MicroS+SmallMesoS+LargeMesoS+MacroS
+!DEBUG------------------------
  return
  end
