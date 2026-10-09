@@ -1,10 +1,10 @@
  SUBROUTINE Input(dMesh,nR,nP,nAtm,AtmSym,IndCav,IndCon,DiamStep,RMin,MaxDiameter,Closed_Thresh,Print_xyz, &
-                 Surf_computation,Rad,n_angles,versors,Accessible,Connect)
+                 Surf_computation,RadS,RadAV,n_angles,versors,Accessible,IndSurf,Connect)
  
  USE angle_scan
 
  IMPLICIT NONE
- INTEGER, ALLOCATABLE, INTENT(OUT) :: IndCav(:), IndCon(:)
+ INTEGER, ALLOCATABLE, INTENT(OUT) :: IndCav(:), IndSurf(:), IndCon(:)
  INTEGER, INTENT(OUT) :: nP, nAtm, Print_xyz, Surf_computation, n_angles, Connect
  INTEGER, DIMENSION(3), INTENT(OUT) :: nR
  INTEGER :: iAtm, lCube, ios
@@ -13,7 +13,7 @@
  REAL(DP), PARAMETER :: One=1.0d0, Two=2.0d0, Three=3.0d0, Four=4.0d0
  REAL(DP), PARAMETER :: Pi=Four*Atan(One)
  REAL(DP), PARAMETER :: dRad=Pi/nTh
- REAL(DP), INTENT(OUT) :: dMesh, DiamStep, RMin, Closed_Thresh, MaxDiameter, Rad
+ REAL(DP), INTENT(OUT) :: dMesh, DiamStep, RMin, Closed_Thresh, MaxDiameter, RadS, RadAV
  REAL(DP), DIMENSION(:,:), ALLOCATABLE, INTENT(OUT) :: versors
  REAL(DP), ALLOCATABLE :: XAtm(:), YAtm(:), ZAtm(:)
  REAL(DP) :: Xmin, Ymin, Zmin, DX, DY, DZ, dist_x, dist_y, dist_z, D
@@ -41,7 +41,8 @@
  Closed_Thresh = 7.0
  Print_xyz = 0
  Surf_computation = 1
- Rad = 2.0
+ RadS = 2.0
+ RadAV = 2.0
  FixCoord = .False.
  n_angles = 120
  Accessible = .True.
@@ -131,8 +132,15 @@
          stop
         end if
         
-     else if(line(3:11).eq.'Probe_Rad') then
-        read(1,*,iostat=ios) Rad            ! radius in A of the probe used for the surface computation
+     else if(line(3:19).eq.'Surface_Probe_Rad') then
+        read(1,*,iostat=ios) RadS            ! radius in A of the probe used for the surface computation
+        if(ios.ne.0) then
+                write(6,'("Error in file input: value for "A20" is invalid")') line
+                stop
+        end if
+
+     else if(line(3:29).eq.'Accessible_Volume_Probe_Rad') then
+        read(1,*,iostat=ios) RadAV            ! radius in A of the probe used for the Accessible Volume
         if(ios.ne.0) then
                 write(6,'("Error in file input: value for "A20" is invalid")') line
                 stop
@@ -246,9 +254,24 @@
    close(1)
  end if
 
- nR = (/ NINT(DX/dMesh), NINT(DY/dMesh), NINT(DZ/dMesh) /)
+ !Define the number of blocks of each dimension.
+    !With CEILING if DX (or DY or DZ) is not an integer number:
+    ! CEILING(3.1) = 4, CEILING(3.0) = 3
+    !
+    ! This is important to ensure that cells that would be too small are not used, 
+    ! where atoms would be wrapped in the wrong places.
+    !
+    ! for this reason we didn't use NINT:
+    ! NINT(3.1) = 3.    But it's very dangerous to take a smaller value for DX, DY or DZ 
+    !
+    ! It would be wrong using INT +1 also, because:
+    ! if DX = 3.1 ->  INT(3.1) +1 = 4 (That's correct)
+    ! BUT: if DX = 3.0 -> INT(3.0) +1 = 4 (That's wrong, 3 is the correct value)
+
+ nR = (/ CEILING(DX/dMesh), CEILING(DY/dMesh), CEILING(DZ/dMesh) /)
  nP = nR(1)*nR(2)*nR(3)
  iM2 = nR(1)*nR(2)
+
  allocate(IndCav(nP))
 
  if (Connect.gt.0) then
@@ -259,6 +282,13 @@
 ! The volume is divided in blocks with edge dMesh. For each block, IdnCav = 0 if void, = 1 if occupied by the
 ! material skeleton.
  IndCav = 0
+
+ !If surface computation is required, allocate the IndSurf array
+ if (surf_computation.eq.1) then
+    allocate(IndSurf(nP))
+    IndSurf = 0
+ end if
+
 ! Loop on atoms and find to which "mesh coordinate" each one belongs, then find the block index and put
 ! the corresponding IndCav to 1 (i.e. this block is filled)
  do iAtm = 1, nAtm
@@ -271,6 +301,7 @@
    iCub = XCub + nR(1)*(YCub-1) + iM2*(ZCub-1)
    IndCav(iCub) = 1
    if (Connect.gt.1) IndCon(iCub) = -1   
+   if (surf_computation.eq.1) IndSurf(iCub) = -1
 
 ! Consider the vdW radius of this atom and fill the blocks whose center falls inside the vdW sphere 
    lCube = int(FindRvdW(AtmSym(iAtm)) / dMesh)+1
@@ -295,10 +326,13 @@
         ! Check if center is within radius from atom.
 
         D = sqrt(dist_x**2+dist_y**2+dist_z**2)
+
         if (D.le.FindRvdW(AtmSym(iAtm))) then
            IndCav(iCubNew) = 1
-           if(Connect.gt.0) IndCon(iCubNew) = -1
+           if (surf_computation.eq.1) IndSurf(iCubNew) = -1
+           if (Connect.gt.0) IndCon(iCubNew) = -1
         end if
+
      end do
     end do
    end do

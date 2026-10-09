@@ -25,13 +25,24 @@
    end do
    
    do iAtm = 1, nAtm
-     if(AtmSym(iAtm).eq."H")  SkM = SkM + 1.0d0
-     if(AtmSym(iAtm).eq."C")  SkM = SkM + 12.0d0
-     if(AtmSym(iAtm).eq."N")  SkM = SkM + 14.0d0
-     if(AtmSym(iAtm).eq."O")  SkM = SkM + 16.0d0
-     if(AtmSym(iAtm).eq."CH") SkM = SkM + 14.0d0
-     if(AtmSym(iAtm).eq."Si") SkM = SkM + 28.0d0
-     if(AtmSym(iAtm).eq."Ar")  SkM = SkM + 12.0d0  !for testing 
+     if(AtmSym(iAtm).eq."H") then
+       SkM = SkM + 1.0d0
+     elseif(AtmSym(iAtm).eq."C") then
+       SkM = SkM + 12.0d0
+     elseif(AtmSym(iAtm).eq."N") then
+       SkM = SkM + 14.0d0
+     elseif(AtmSym(iAtm).eq."O") then
+       SkM = SkM + 16.0d0
+     elseif(AtmSym(iAtm).eq."CH") then
+       SkM = SkM + 14.0d0
+     elseif(AtmSym(iAtm).eq."Si") then
+       SkM = SkM + 28.0d0
+     elseif(AtmSym(iAtm).eq."SA") then
+       SkM = SkM + 100.0d0
+     else
+       write(6,'("SkM not defined for ",a2)') AtmSym(iAtm)
+       stop
+     end if
    end do
 
    SkD = SkM / SkV
