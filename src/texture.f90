@@ -1,5 +1,5 @@
  SUBROUTINE Texture(nP,dMesh,nVol,DiamStep,VMinD,Cumulative_VMinD,UltraV,MicroV,SmallMesoV,LargeMesoV,MacroV,TotPorV,nR,iM1,iM2, &     
-                   surf_computation,DistMin,UltraS,MicroS,SmallMesoS,LargeMesoS,MacroS,Rad,IndCav,Surf,Accessible,IndSurf)
+                   surf_computation,DistMin,UltraS,MicroS,SmallMesoS,LargeMesoS,MacroS,RadAV,IndCav,Surf,Accessible,IndSurf)
 
  IMPLICIT NONE
  INTEGER, PARAMETER :: DP = SELECTED_REAL_KIND(14)
@@ -7,7 +7,7 @@
  INTEGER, DIMENSION(:), INTENT(INOUT) :: IndCav
  INTEGER, DIMENSION(:), INTENT(IN) :: IndSurf, nR
  REAL(DP), DIMENSION(:), INTENT(INOUT) :: VMinD
- REAL(DP), INTENT(IN) :: DiamStep, dMesh, Rad
+ REAL(DP), INTENT(IN) :: DiamStep, dMesh, RadAV
  REAL(DP), INTENT(OUT) :: UltraV, MicroV, SmallMesoV, LargeMesoV, MacroV, TotPorV
  REAL(DP), INTENT(OUT) :: UltraS, MicroS, SmallMesoS, LargeMesoS, MacroS
  REAL(DP), DIMENSION(:), INTENT(IN) :: DistMin
@@ -30,7 +30,7 @@
 
  NAV = Zero
  v_block = dMesh*dMesh*dMesh
- Rad1 = Rad+(dMesh*0.1)
+ Rad1 = RadAV+(dMesh*0.1)
 
 ! Allocate the array for the NOT Accessible Volume. 
 ! NAccVal= False : ISN'T NOT Accessible Volume 
@@ -80,7 +80,7 @@
            ! Compute the actual distance
            D = sqrt(Dist_X*Dist_X + Dist_Y*Dist_Y + Dist_Z*Dist_Z)
          
-           ! If D is lower than Rad the block overlaps with the probe, and it is part of the Not Accessible volume
+           ! If D is lower than Rad1 the block overlaps with the probe, and it is part of the Not Accessible volume
            if (D.le.Rad1) then
               Overlap = .True.
               IndCav(iP) = 3
@@ -93,14 +93,6 @@
 
    end do
  end if
-
-!___DEBUG____
- open(1,file='IndCav_pre.txt',status='unknown',form='formatted')
- do iP = 1, nP
-   write(1,'("IndCav(",i20,") = ",i5)') iP, IndCav(iP)
- end do
- close(1)
-!___DEBUG____
 
 ! Compute simplified, total cumulative volumes and surface
  TotPorV = Zero
@@ -138,10 +130,6 @@
  do iP= 1, nP
     if (IndCav(iP).eq.1.OR.IndCav(iP).eq.2) cycle     !Filled blocks
     
-    !DEBUG_29_30_2026-----------------------
-    !write(6,'("The block ",i7," has IndCav= ",i3, "and has DistMin = ",f12.6)') iP, IndCav(iP), DistMin(iP)
-    !DEBUG_29_30_2026-----------------------
-   
     if (IndSurf(iP).eq.1.OR.IndSurf(iP).eq.2) then   !Are part of the surface
        if (DistMin(iP).le.UltraMax) then             !Ultramicro surf block
           IndCav(iP) = 4
@@ -155,10 +143,6 @@
           IndCav(iP) = 8
        end if                                                                
        
-       !DEBUG_29_30_2026-----------------------
-       !write(6,'("The block is in the surface, so the New IndCav= ",i3)') IndCav(iP)
-       !DEBUG_29_30_2026-----------------------
-
     elseif (IndCav(iP).ne.3) then
 
           if (DistMin(iP).le.UltraMax) then      !Ultramicro bulk block
@@ -172,19 +156,8 @@
           else                                         !Macro bulk block   
              IndCav(iP) = 13
           end if
-       !DEBUG_29_30_2026-----------------------
-       !write(6,'("The block is NOT in the surface, so the New IndCav= ",i3)') IndCav(iP)
-       !DEBUG_29_30_2026-----------------------
     end if
  end do
-
-!___DEBUG____
- open(1,file='IndCav_post.txt',status='unknown',form='formatted')
- do iP = 1, nP
-   write(1,'("IndCav(",i20,") = ",i5)') iP, IndCav(iP)
- end do
- close(1)
-!___DEBUG____
 
 !  Fill VMinD array with the accessible volume  
  do iP = 1,nP
@@ -248,8 +221,5 @@
    Cumulative_VMinD(iVol) = TotPorV
  end do
 
-!DEBUG------------------------
- write(6,'("Sum of surface in texture: ", f17.1)') UltraS+MicroS+SmallMesoS+LargeMesoS+MacroS
-!DEBUG------------------------
  return
  end

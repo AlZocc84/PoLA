@@ -1,34 +1,33 @@
  SUBROUTINE Output(dMesh,nR,nP,nVol,IndCav,DiamStep,Cumulative_VMinD,VMinD,Accessible, &
              UltraV,MicroV,SmallMesoV,LargeMesoV,MacroV,TotPorV,SkV,SkM,SkD,Print_xyz, &
-             Rad,surf_computation,UltraS,MicroS,SmallMesoS,LargeMesoS,MacroS,nMono_dens,MonoVol)
+             RadS,surf_computation,UltraS,MicroS,SmallMesoS,LargeMesoS,MacroS,nMono_dens)
  
  IMPLICIT NONE
  INTEGER, PARAMETER :: DP = SELECTED_REAL_KIND(14)
  INTEGER, DIMENSION(:), INTENT(IN) :: IndCav
- INTEGER, INTENT(IN) :: nP, nVol, Print_xyz, Surf_Computation, nMono_dens
+ INTEGER, INTENT(IN) :: nP, nVol, Print_xyz, Surf_Computation
  INTEGER, DIMENSION(3), INTENT(IN) :: nR
  INTEGER :: iP, iC, iM2, XCub, YCub, ZCub, iVol
- REAL(DP), INTENT(IN) :: dMesh, DiamStep, SkV, SkM, SkD
+ REAL(DP), INTENT(IN) :: dMesh, DiamStep, SkV, SkM, SkD, nMono_dens
  REAL(DP), INTENT(IN) :: UltraV, MicroV, SmallMesoV, LargeMesoV, MacroV, TotPorV
- REAL(DP), INTENT(IN) :: UltraS, MicroS, SmallMesoS, LargeMesoS, MacroS, Rad, MonoVol
+ REAL(DP), INTENT(IN) :: UltraS, MicroS, SmallMesoS, LargeMesoS, MacroS, RadS
  REAL(DP), DIMENSION(:), INTENT(IN) :: Cumulative_VMinD, VMinD
  REAL(DP) :: XX, YY, ZZ, MinD, vMesh, vTot, Fact, Fact_sup, Surf_convert
  REAL(DP), PARAMETER :: gMol_A3_to_g_cm3 = 1.6606d0 ! Conversion from g mol-1 A-3 to g cm-3 = 1/0.6022
  REAL(DP), PARAMETER :: A3_gMol_to_cm3_g = 0.6022d0 ! Conversion from A^3/(g mol-1) to cm^3 / g
  REAL(DP), PARAMETER :: A2_to_m2_mol = 6.022d3 ! Conversion from A2/cell to m2/mol
  REAL(DP), PARAMETER :: N2_cross = 6.022 * 1.62 * 1.0d4 ! Conversion from monolayer mol/g to m2/g
-!debug-----------------------------
- REAL(DP) :: nMon1
-!debug-----------------------------
  LOGICAL, INTENT(IN) :: Accessible
 
 ! Write the results
- if (Print_xyz.ge.1) open(1,file='porous.xyz',status='unknown',form='formatted')
- open(2, file='Cumulative_volume.txt', status='unknown', form='formatted')
+ if (Print_xyz.ge.1) then
+    open(1,file='porous.xyz',status='unknown',form='formatted')
+    open(2,file='porous_legend.txt',status='unknown',form='formatted')
+ end if
+ open(3, file='Cumulative_volume.txt', status='unknown', form='formatted')
  open(4, file='VMinD.txt', status='unknown', form='formatted')
  open(7, file='Texture.txt', status='unknown', form='formatted')
  open(8, file='Simplified_vol.txt', status='unknown', form='formatted')
- !open(10, file='Simplified_surface.txt', status='unknown', form='formatted')
 
 ! If required, print the porous structure, indicating filled, void, "closed" and surface blocks 
 ! IndCav, Nature of block
@@ -38,13 +37,12 @@
 !   4-5-6-7-8       surf                                       --> Ne
 !   9-10-11-12-13   vol                                        --> Xe
  if (Print_xyz.eq.1) then
+   write(2,'("Filled                       --> Ar  ")')
+   write(2,'("Excluded because too small   --> Kr  ")')
+   write(2,'("Non Accessible volume        --> He  ")')
+   write(2,'("Surf                         --> Ne  ")')
+   write(2,'("Vol                          --> Xe  ")')
    write(1,*)nP
-   write(1,*)
-   write(1,'("# filled                       --> Ar  ")')
-   write(1,'("# excluded because too small   --> Kr  ")')
-   write(1,'("# Non Accessible volume        --> He  ")')
-   write(1,'("# surf                         --> Ne  ")')
-   write(1,'("# vol                          --> Xe  ")')
    write(1,*)
    iM2 = nR(1)*nR(2)
    do iP = 1, nP
@@ -76,16 +74,15 @@
 !   8-13   surf and vol macro (Rmin > 50 A)           --> Ca
 
  if (Print_xyz.eq.2) then
+   write(2,'("Filled                                     --> Ar   ")')
+   write(2,'("Excluded because too small                 --> Ar   ")')
+   write(2,'("Non Accessible volume                      --> He   ")')
+   write(2,'("Surf and vol ultramicro (Rmin < 7 A)       --> Ne   ")')
+   write(2,'("Surf and vol micro (7 < Rmin < 20 A)       --> Kr   ")')
+   write(2,'("Surf and vol small meso (20 < Rmin < 35 A) --> Xe   ")')
+   write(2,'("Surf and vol large meso (35 < Rmin < 50 A) --> Rn   ")')
+   write(2,'("Surf and vol macro (Rmin > 50 A)           --> Ca   ")')
    write(1,*)nP
-   write(1,*)
-   write(1,'("# filled                                     --> Ar   ")')
-   write(1,'("# excluded because too small                 --> Ar   ")')
-   write(1,'("# Non Accessible volume                      --> He   ")')
-   write(1,'("# surf and vol ultramicro (Rmin < 7 A)       --> Ne   ")')
-   write(1,'("# surf and vol micro (7 < Rmin < 20 A)       --> Kr   ")')
-   write(1,'("# surf and vol small meso (20 < Rmin < 35 A) --> Xe   ")')
-   write(1,'("# surf and vol large meso (35 < Rmin < 50 A) --> Rn   ")')
-   write(1,'("# surf and vol macro (Rmin > 50 A)           --> Ca   ")')
    write(1,*)
    iM2 = nR(1)*nR(2)
    do iP = 1, nP
@@ -125,21 +122,20 @@
 !   13     vol macro (Rmin > 50 A)            --> Ba
 
  if (Print_xyz.eq.3) then
+   write(2,'("Filled                             --> Ar   ")')
+   write(2,'("Excluded because too small         --> Ar   ")')
+   write(2,'("Non Accessible volume              --> Kr   ")')
+   write(2,'("Surf ultramicro (Rmin < 7 A)       --> Li   ")')
+   write(2,'("Surf micro (7 < Rmin < 20 A)       --> Na   ")')
+   write(2,'("Surf small meso (20 < Rmin < 35 A) --> K    ")')
+   write(2,'("Surf large meso (35 < Rmin < 50 A) --> Rb   ")')
+   write(2,'("Surf macro (Rmin > 50 A)           --> Cs   ")')
+   write(2,'("Vol ultramicro (Rmin < 7 A)        --> Be   ")')
+   write(2,'("Vol micro (7 < Rmin < 20 A)        --> Mg   ")')
+   write(2,'("Vol small meso (20 < Rmin < 35 A)  --> Ca   ")')
+   write(2,'("Vol large meso (35 < Rmin < 50 A)  --> Sr   ")')
+   write(2,'("Vol macro (Rmin > 50 A)            --> Ba   ")')
    write(1,*)nP
-   write(1,*)
-   write(1,'("# filled                             --> Ar   ")')
-   write(1,'("# excluded because too small         --> Ar   ")')
-   write(1,'("# Non Accessible volume              --> Kr   ")')
-   write(1,'("# surf ultramicro (Rmin < 7 A)       --> Li   ")')
-   write(1,'("# surf micro (7 < Rmin < 20 A)       --> Na   ")')
-   write(1,'("# surf small meso (20 < Rmin < 35 A) --> K    ")')
-   write(1,'("# surf large meso (35 < Rmin < 50 A) --> Rb   ")')
-   write(1,'("# surf macro (Rmin > 50 A)           --> Cs   ")')
-   write(1,'("# vol ultramicro (Rmin < 7 A)        --> Be   ")')
-   write(1,'("# vol micro (7 < Rmin < 20 A)        --> Mg   ")')
-   write(1,'("# vol small meso (20 < Rmin < 35 A)  --> Ca   ")')
-   write(1,'("# vol large meso (35 < Rmin < 50 A)  --> Sr   ")')
-   write(1,'("# vol macro (Rmin > 50 A)            --> Ba   ")')
    write(1,*)
    iM2 = nR(1)*nR(2)
    do iP = 1, nP
@@ -184,17 +180,13 @@
 
 ! The VMinD analysis; Fact converts A3 to cm3/g
  Fact = A3_gMol_to_cm3_g / SkM
- Fact_sup= 3.570795*Rad*Rad
+ Fact_sup= 3.570795*RadS*RadS
  Surf_convert = (A3_gMol_to_cm3_g * 0.808d0)/28.0d0
-!Debug--------------------------------------
- write(6,'("Surf_convert = ",f17.15)') Surf_convert
- nMon1 = (0.808d0*MonoVol*0.6022d0)/28.0d0
-!DEBUG--------------------------------------
 
  MinD = 0.0d0
  do iVol = 1, nVol
    MinD = MinD + DiamStep
-   write(2,'(f12.4,f14.1,e20.8)') MinD, Cumulative_VMinD(iVol), Fact*Cumulative_VMinD(iVol)
+   write(3,'(f12.4,f14.1,e20.8)') MinD, Cumulative_VMinD(iVol), Fact*Cumulative_VMinD(iVol)
    write(4,'(f12.4,f14.1,e20.8)') MinD, VMinD(iVol), Fact*VMinD(iVol)
  end do
 
@@ -259,39 +251,29 @@
  
  if(Surf_Computation.eq.1) then
    write(7,*)
-  !debug----------------------------------
-   write(7,'("Total surface (m^2/g) (calculated from MonoVol) / MonoVol(A^3)  ",f10.1,"  ",f17.1)') &
-                                                                           Surf_convert*MonoVol * N2_cross / SkM, MonoVol
-   write(7,'("Monolayer volume (A^3) (calculated without INT) nMon1  ",f10.1)')  nMon1
-   write(7,'("Total surface (m^2/g) (calculated from nMon1) / nMon1/surfconvert  ",f10.1,"  ",f17.1)') &
-                                                                           nMon1 * N2_cross / SkM, nMon1/Surf_convert
-  !DEBUG------------------------------------
 
-   write(7,'("Total surface (m^2/g) (liquid nitrogen monolayer) /VmonoA3  ",f10.1,"  ",f17.1)') &
-                                                                           nMono_dens * N2_cross / SkM, nMono_dens/Surf_convert
+   write(7,'("Total surface (m^2/g) (liquid nitrogen monolayer) /VmonoA3  ",f10.1)') &
+                                                                           nMono_dens * N2_cross / SkM
    write(7,*)
-   write(7,'("                                                        with MinD < 7 A    ",f8.3,"  ",f17.1)') &
-                                                                      Surf_convert * UltraS * N2_cross / SkM, Ultras
+   write(7,'("                                                        with MinD < 7 A    ",f8.1)') &
+                                                                      Surf_convert * UltraS * N2_cross / SkM
    write(7,'("                                                      /")')
-   write(7,'("Surface [m^2/g] with MinD < 20 A   ",f10.3,"  ",f17.1," ---- of which ")') &
-                                                                                 Surf_convert * (UltraS+MicroS) * N2_cross / SkM &
-                                                                                              , (UltraS+MicroS)  
+   write(7,'("Surface [m^2/g] with MinD < 20 A   ",f10.1,"  ---- of which ")') Surf_convert * (UltraS+MicroS) * N2_cross / SkM 
    write(7,'("                                                      \")')
-   write(7,'("                                                        with 7 A < MinD < 20 A      ",f8.3,"  ",f17.1)') &
-                                                                      Surf_convert * MicroS * N2_cross / SkM, MicroS
+   write(7,'("                                                        with 7 A < MinD < 20 A      ",f8.1)') &
+                                                                      Surf_convert * MicroS * N2_cross / SkM
     
    write(7,*)
-   write(7,'("                                                        with 20 A < MinD < 35 A   ",f8.3,"  ",f17.1)') &
-                                                                      Surf_convert * SmallMesoS * N2_cross / SkM, SmallMesoS
+   write(7,'("                                                        with 20 A < MinD < 35 A   ",f8.1)') &
+                                                                      Surf_convert * SmallMesoS * N2_cross / SkM
    write(7,'("                                                      /")')
-   write(7,'("Surface [m^2/g] with 20 < MinD < 50 A ",2f10.3," -- of which ")') Surf_convert*(SmallMesoS+LargeMesoS)*N2_cross/SkM &
-                                                                                             , SmallMesoS+LargeMesoS
+   write(7,'("Surface [m^2/g] with 20 < MinD < 50 A ",f10.1," -- of which ")') Surf_convert*(SmallMesoS+LargeMesoS)*N2_cross/SkM
    write(7,'("                                                      \")')
-   write(7,'("                                                        with 35 < MinD < 50 A   ",2f8.3)') &
-                                                                      Surf_convert * LargeMesoS * N2_cross / SkM, LargeMesoS
+   write(7,'("                                                        with 35 < MinD < 50 A   ",f8.1)') &
+                                                                      Surf_convert * LargeMesoS * N2_cross / SkM
                                                                                                                                 
    write(7,*)
-   write(7,'("Surface [m^2/g] with MinD > 50 A   ",f10.3,"  ",f8.3)') Surf_convert * MacroS * N2_cross / SkM, MacroS
+   write(7,'("Surface [m^2/g] with MinD > 50 A   ",f8.1)') Surf_convert * MacroS * N2_cross / SkM
                                                                                                                                 
    write(7,*)                                                                                                                   
 
@@ -325,7 +307,6 @@
  close(4)
  close(7)
  close(8)
- close(10)
 
  return
  end
