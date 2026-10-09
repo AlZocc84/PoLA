@@ -1,5 +1,5 @@
  SUBROUTINE Texture(nP,dMesh,nVol,DiamStep,VMinD,Cumulative_VMinD,UltraV,MicroV,SmallMesoV,LargeMesoV,MacroV,TotPorV,nR,iM1,iM2, &     
-                   surf_computation,DistMin,UltraS,MicroS,SmallMesoS,LargeMesoS,MacroS,RadAV,IndCav,Surf,Accessible,IndSurf,IndCon,Connect)
+         surf_computation,DistMin,UltraS,MicroS,SmallMesoS,LargeMesoS,MacroS,RadAV,IndCav,Surf,Accessible,IndSurf,IndCon,Connect)
 
  IMPLICIT NONE
  INTEGER, PARAMETER :: DP = SELECTED_REAL_KIND(14)
@@ -85,6 +85,7 @@
               Overlap = .True.
               IndCav(iP) = 3
               NAccVol(iP) = .True. 
+              if(Connect.eq.2) IndCon(iP) = -2  !if the connectivity analysis is required with accessible volume, the IndCon(iP) is -2 (this block won't be considered for the connectivity.
            end if
 
          end do

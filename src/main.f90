@@ -32,6 +32,13 @@ program pore_local_analysis
  LOGICAL:: Found, Accessible
 
  INTERFACE
+   SUBROUTINE Connectivity(IndCon,nR,dMesh,nP)
+     INTEGER, PARAMETER :: DP = SELECTED_REAL_KIND(14)
+     INTEGER, DIMENSION(:), INTENT(INOUT) :: IndCon
+     INTEGER, DIMENSION(3), INTENT(IN) :: nR
+     INTEGER, INTENT(IN) :: nP                                                                                                          
+     REAL(DP), INTENT(IN) :: dMesh
+   END SUBROUTINE Connectivity
    SUBROUTINE Input(dMesh,nR,nP,nAtm,AtmSym,IndCav,IndCon,DiamStep,RMin,MaxDiameter,Closed_Thresh,Print_xyz, &
                  surf_computation,RadS,RadAV,n_angles,versors,Accessible,IndSurf,Connect)
      INTEGER, PARAMETER :: DP = SELECTED_REAL_KIND(14)
@@ -62,10 +69,7 @@ program pore_local_analysis
      CHARACTER(2), DIMENSION(:), INTENT(IN) :: AtmSym
    END SUBROUTINE Skel_Dens
      SUBROUTINE Surface(Surf_Computation,dMesh,nR,nP,RadS,nMono_dens,IndSurf)
-     IMPLICIT NONE
-
      INTEGER, PARAMETER :: DP = SELECTED_REAL_KIND(14)
-
      INTEGER, INTENT(IN) :: Surf_Computation, nP                                                                                                      
      INTEGER, DIMENSION(3), INTENT(IN) :: nR
      INTEGER, DIMENSION(:), INTENT(INOUT) :: IndSurf
@@ -74,8 +78,7 @@ program pore_local_analysis
 
    END SUBROUTINE Surface                                             
    SUBROUTINE Texture(nP,dMesh,nVol,DiamStep,VMinD,Cumulative_VMinD,UltraV,MicroV,SmallMesoV,LargeMesoV,MacroV,TotPorV,nR,iM1,iM2, &                                   
-                   surf_computation,DistMin,UltraS,MicroS,SmallMesoS,LargeMesoS,MacroS,RadAV,IndCav,Surf,Accessible,IndSurf,IndCon,Connect)
-     IMPLICIT NONE
+     surf_computation,DistMin,UltraS,MicroS,SmallMesoS,LargeMesoS,MacroS,RadAV,IndCav,Surf,Accessible,IndSurf,IndCon,Connect)
      INTEGER, PARAMETER :: DP = SELECTED_REAL_KIND(14)
      INTEGER, INTENT(IN) :: nVol, surf_computation, nP, iM1, iM2, Connect
      INTEGER, DIMENSION(:), INTENT(INOUT) :: IndCav, IndCon
@@ -274,15 +277,14 @@ program pore_local_analysis
  ! Compute specific surface
  call Surface(Surf_Computation,dMesh,nR,nP,RadS,nMono_dens,IndSurf) 
  
+ call Texture(nP,dMesh,nVol,DiamStep,VMinD,Cumulative_VMinD,UltraV,MicroV,SmallMesoV,LargeMesoV,MacroV,TotPorV,nR,iM1,iM2,&     
+      surf_computation,DistMin,UltraS,MicroS,SmallMesoS,LargeMesoS,MacroS,RadAV,IndCav,Surf,Accessible,IndSurf,IndCon,Connect)
 
 ! Find connectivity
-
  if (Connect.gt.0) then
-    call Connectivity()
+    call Connectivity(IndCon,nR,dMesh,nP)
  end if
 
- call Texture(nP,dMesh,nVol,DiamStep,VMinD,Cumulative_VMinD,UltraV,MicroV,SmallMesoV,LargeMesoV,MacroV,TotPorV,nR,iM1,iM2,&     
-                   surf_computation,DistMin,UltraS,MicroS,SmallMesoS,LargeMesoS,MacroS,RadAV,IndCav,Surf,Accessible,IndSurf,IndCon,Connect)
 
 ! Write the results
  call Output(dMesh,nR,nP,nVol,IndCav,DiamStep,Cumulative_VMinD,VMinD,Accessible, &
