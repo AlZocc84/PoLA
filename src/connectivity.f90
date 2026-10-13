@@ -10,7 +10,7 @@ subroutine Connectivity(IndCon,nR,dMesh,nP)
  INTEGER, INTENT(IN) :: nP
  REAL(DP), INTENT(IN) :: dMesh
  
- INTEGER :: iM2, XCub, YCub, ZCub, V, iP, iC, Npore, iCubNew, indexP
+ INTEGER :: iM2, XCub, YCub, ZCub, V, iP, iC, Npore, iPNew, indexP, XCubN, YCubN, ZCubN
  REAL(DP) :: XX, YY, ZZ, XP, YP, ZP
 
  INTERFACE
@@ -55,9 +55,12 @@ subroutine Connectivity(IndCon,nR,dMesh,nP)
     !
     ! Then, for each block, if it is located at one of the cell boundaries
     ! (i.e., if the X, Y, or Z coordinate is less than dMesh), 
+    ! and if the adjacent cube on the other side of the wall belongs to the same pore, then
     ! Connection(1), Connection(2), or Connection(3) is incremented, respectively.
-    ! Otherwisw, if it is on the other side of the cell boundaries
+    !
+    ! Otherwise, if it is on the other side of the cell boundaries
     ! (i.e., if the X, Y, or Z coordinate is greater than (nR(i)*dMesh)+dMesh/2),
+    ! and if the adjacent cube on the other side of the wall belongs to the same pore, then
     ! Connection(4), Connection(5), or Connection(6) is incremented, respectively.
     !
     ! If there are edge or vertex blocks, all corresponding components are incremented.
@@ -85,17 +88,70 @@ subroutine Connectivity(IndCon,nR,dMesh,nP)
 
        ! The right component/s of Connection is/are incremented
        if(XP.le.(dMesh/2)) then
-          Connection(1) = Connection(1) + 1
+          ZCub = INT(iC/iM2) + 1 
+          YCub = INT(MOD(iC,iM2)/nR(1)) + 1
+          XCub = MOD(MOD(iC,iM2),nR(1)) + 1
+          ! This is the X value of the near block on the other side of the cell
+          XCubN = XCub - 1            
+          XCubN = Mod(XCubN,nR(1)) + nR(1)
+          iPnew = iM2*(ZCub-1) + nR(1)*(YCub-1) + XCubN
+         
+          if(IndCon(iPNew).eq.indexP) Connection(1) = Connection(1) + 1
+
        else if(YP.le.(dMesh/2)) then
-          Connection(2) = Connection(2) + 1
+          ZCub = INT(iC/iM2) + 1 
+          YCub = INT(MOD(iC,iM2)/nR(1)) + 1
+          XCub = MOD(MOD(iC,iM2),nR(1)) + 1
+          ! This is the Y value of the near block on the other side of the cell
+          YCubN = YCub - 1            
+          YCubN = Mod(YCubN,nR(2)) + nR(2)
+          iPnew = iM2*(ZCub-1) + nR(1)*(YCubN-1) + XCub
+
+          if(IndCon(iPNew).eq.indexP) Connection(2) = Connection(2) + 1
+
        else if(ZP.le.(dMesh/2)) then
-          Connection(3) = Connection(3) + 1
+          ZCub = INT(iC/iM2) + 1 
+          YCub = INT(MOD(iC,iM2)/nR(1)) + 1
+          XCub = MOD(MOD(iC,iM2),nR(1)) + 1
+          ! This is the Z value of the near block on the other side of the cell
+          ZCubN = ZCub - 1            
+          ZCubN = Mod(ZCubN,nR(3)) + nR(3)
+          iPnew = iM2*(ZCubN-1) + nR(1)*(YCub-1) + XCub
+
+          if(IndCon(iPNew).eq.indexP) Connection(3) = Connection(3) + 1
+
        else if(XP.ge.((nR(1)*dMesh)-(dMesh/2))) then
-          Connection(4) = Connection(4) + 1
+          ZCub = INT(iC/iM2) + 1 
+          YCub = INT(MOD(iC,iM2)/nR(1)) + 1
+          XCub = MOD(MOD(iC,iM2),nR(1)) + 1
+          ! This is the X value of the near block on the other side of the cell
+          XCubN = XCub + 1            
+          XCubN = Mod(XCubN,nR(1))
+          iPnew = iM2*(ZCub-1) + nR(1)*(YCub-1) + XCubN
+
+          if(IndCon(iPNew).eq.indexP) Connection(4) = Connection(4) + 1
+
        else if(YP.ge.((nR(2)*dMesh)-(dMesh/2))) then
-          Connection(5) = Connection(5) + 1
+          ZCub = INT(iC/iM2) + 1 
+          YCub = INT(MOD(iC,iM2)/nR(1)) + 1
+          XCub = MOD(MOD(iC,iM2),nR(1)) + 1
+          ! This is the Y value of the near block on the other side of the cell
+          YCubN = YCub + 1            
+          YCubN = Mod(YCubN,nR(2))
+          iPnew = iM2*(ZCub-1) + nR(1)*(YCubN-1) + XCub
+
+          if(IndCon(iPNew).eq.indexP) Connection(5) = Connection(5) + 1
+
        else if(ZP.ge.((nR(3)*dMesh)-(dMesh/2))) then
-          Connection(6) = Connection(6) + 1
+          ZCub = INT(iC/iM2) + 1
+          YCub = INT(MOD(iC,iM2)/nR(1)) + 1                                            
+          XCub = MOD(MOD(iC,iM2),nR(1)) + 1
+          ! This is the Z value of the near block on the other side of the cell
+          ZCubN = ZCub + 1            
+          ZCubN = Mod(ZCubN,nR(3))
+          iPnew = iM2*(ZCubN-1) + nR(1)*(YCub-1) + XCub
+
+          if(IndCon(iPNew).eq.indexP) Connection(6) = Connection(6) + 1
        end if 
     end do 
 
