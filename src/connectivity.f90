@@ -47,8 +47,8 @@ subroutine Connectivity(IndCon,nR,dMesh,nP)
  do indexP = 1, Npore
 
     !DEBUG__________________
-    write(6,'("=================")') 
-    write(6,'("Working on pore: ",i20)') indexP
+    !write(6,'("=================")') 
+   ! write(6,'("Working on pore: ",i20)') indexP
 
     ! Connection is an array with 6 value:
     !              1 2 3 4 5 6
@@ -98,7 +98,7 @@ subroutine Connectivity(IndCon,nR,dMesh,nP)
           iPnew = iM2*(ZCub-1) + nR(1)*(YCub-1) + XCubN
          
           !DEBUG__________________________________
-          write(6,'(" for X IndCon(",i20,") : ",i20)') iPnew, IndCon(iPnew)
+   !       write(6,'(" for X IndCon(",i20,") : ",i20)') iPnew, IndCon(iPnew)
           !DEBUG__________________________________
           if(IndCon(iPNew).eq.indexP) Connection(1) = Connection(1) + 1
 
@@ -109,7 +109,7 @@ subroutine Connectivity(IndCon,nR,dMesh,nP)
           iPnew = iM2*(ZCub-1) + nR(1)*(YCubN-1) + XCub
 
           !DEBUG__________________________________
-          write(6,'(" for Y IndCon(",i20,") : ",i20)') iPnew, IndCon(iPnew)
+   !       write(6,'(" for Y IndCon(",i20,") : ",i20)') iPnew, IndCon(iPnew)
           !DEBUG__________________________________
           if(IndCon(iPNew).eq.indexP) Connection(2) = Connection(2) + 1
 
@@ -120,7 +120,7 @@ subroutine Connectivity(IndCon,nR,dMesh,nP)
           iPnew = iM2*(ZCubN-1) + nR(1)*(YCub-1) + XCub
 
           !DEBUG__________________________________
-          write(6,'(" for Z IndCon(",i20,") : ",i20)') iPnew, IndCon(iPnew)
+   !       write(6,'(" for Z IndCon(",i20,") : ",i20)') iPnew, IndCon(iPnew)
           !DEBUG__________________________________
           if(IndCon(iPNew).eq.indexP) Connection(3) = Connection(3) + 1
 
@@ -132,7 +132,7 @@ subroutine Connectivity(IndCon,nR,dMesh,nP)
 
           if(IndCon(iPNew).eq.indexP) Connection(4) = Connection(4) + 1
           !DEBUG__________________________________
-          write(6,'(" for -X IndCon(",i20,") : ",i20)') iPnew, IndCon(iPnew)
+   !       write(6,'(" for -X IndCon(",i20,") : ",i20)') iPnew, IndCon(iPnew)
           !DEBUG__________________________________
 
        else if(YCub.eq.nR(2)) then
@@ -142,7 +142,7 @@ subroutine Connectivity(IndCon,nR,dMesh,nP)
           iPnew = iM2*(ZCub-1) + nR(1)*(YCubN-1) + XCub
 
           !DEBUG__________________________________
-          write(6,'(" for -Y IndCon(",i20,") : ",i20)') iPnew, IndCon(iPnew)
+   !       write(6,'(" for -Y IndCon(",i20,") : ",i20)') iPnew, IndCon(iPnew)
           !DEBUG__________________________________
           if(IndCon(iPNew).eq.indexP) Connection(5) = Connection(5) + 1
 
@@ -153,7 +153,7 @@ subroutine Connectivity(IndCon,nR,dMesh,nP)
           iPnew = iM2*(ZCubN-1) + nR(1)*(YCub-1) + XCub
 
           !DEBUG__________________________________
-          write(6,'(" for -Z IndCon(",i20,") : ",i20)') iPnew, IndCon(iPnew)
+   !       write(6,'(" for -Z IndCon(",i20,") : ",i20)') iPnew, IndCon(iPnew)
           !DEBUG__________________________________
           if(IndCon(iPNew).eq.indexP) Connection(6) = Connection(6) + 1
        end if 
