@@ -10,7 +10,7 @@ subroutine Connectivity(IndCon,nR,dMesh,nP)
  INTEGER, INTENT(IN) :: nP
  REAL(DP), INTENT(IN) :: dMesh
  
- INTEGER :: iM2, XCub, YCub, ZCub, V, iP, iC, Npore, iPNew, indexP, XCubN, YCubN, ZCubN
+ INTEGER :: iM1, iM2, XCub, YCub, ZCub, V, iP, iC, Npore, iPNew, indexP, XCubN, YCubN, ZCubN
  REAL(DP) :: XX, YY, ZZ, XP, YP, ZP
 
  INTERFACE
@@ -23,6 +23,7 @@ subroutine Connectivity(IndCon,nR,dMesh,nP)
 
  END INTERFACE
 
+ iM1 = nR(1)
  iM2 = nR(1)*nR(2)
 
  ! Find connectivity
@@ -30,6 +31,7 @@ subroutine Connectivity(IndCon,nR,dMesh,nP)
  Npore = 0
 
  open(1,file='pores.txt',status='unknown',form='formatted')
+ write(1,'("             Pore number           Volume (A^3 / cell)")')
  do iP =1, nP
     if(IndCon(iP).ne.0) cycle    ! Only the void blocks can be part of a pore, obviously, so we skip the filled blocks
     Npore = Npore + 1
@@ -45,10 +47,6 @@ subroutine Connectivity(IndCon,nR,dMesh,nP)
  ! Loop over the pores:
  open(2,file='connectivity.txt',status='unknown',form='formatted')
  do indexP = 1, Npore
-
-    !DEBUG__________________
-    !write(6,'("=================")') 
-   ! write(6,'("Working on pore: ",i20)') indexP
 
     ! Connection is an array with 6 value:
     !              1 2 3 4 5 6
@@ -86,78 +84,34 @@ subroutine Connectivity(IndCon,nR,dMesh,nP)
        YCub = INT(MOD(iC,iM2)/nR(1)) + 1
        XCub = MOD(MOD(iC,iM2),nR(1)) + 1
 
-!________DEBUG___________________
-!     write(6,'("iP: ",i20," X = ",f12.6," Y = ",f12.6," Z = ",f12.6)') iP, XP, YP, ZP
-!________DEBUG___________________
-
        ! The right component/s of Connection is/are incremented
-       if(XCub.eq.1) then
-          ! This is the X value of the near block on the other side of the cell
-          XCubN = XCub - 1            
-          XCubN = Mod(XCubN,nR(1)) + nR(1)
-          iPnew = iM2*(ZCub-1) + nR(1)*(YCub-1) + XCubN
-         
-          !DEBUG__________________________________
-   !       write(6,'(" for X IndCon(",i20,") : ",i20)') iPnew, IndCon(iPnew)
-          !DEBUG__________________________________
-          if(IndCon(iPNew).eq.indexP) Connection(1) = Connection(1) + 1
+       if (XCub.eq.1) then ! this means that block iP is in the X left border
+         iPNew = iM2*(ZCub-1) + iM1*(YCub-1) + nR(1) ! this is the "image" of the
+         if (IndCon(iPNew).eq.indexP) Connection(1) = Connection(1) + 1
+       end if
+       if (XCub.eq.nR(1)) then ! this means that block iP is in the X right borde
+         iPNew = iM2*(ZCub-1) + iM1*(YCub-1) + 1 ! this is the "image" of the blo
+         if (IndCon(iPNew).eq.indexP) Connection(4) = Connection(4) + 1
+       end if
 
-       else if(YCub.eq.1) then
-          ! This is the Y value of the near block on the other side of the cell
-          YCubN = YCub - 1            
-          YCubN = Mod(YCubN,nR(2)) + nR(2)
-          iPnew = iM2*(ZCub-1) + nR(1)*(YCubN-1) + XCub
+       if (YCub.eq.1) then ! this means that block iP is in the Y left border
+         iPNew = iM2*(ZCub-1) + iM1*(nR(2)-1) + XCub ! this is the "image" of the
+         if (IndCon(iPNew).eq.indexP) Connection(2) = Connection(2) + 1
+       end if
+       if (YCub.eq.nR(2)) then ! this means that block iP is in the Y right borde
+         iPNew = iM2*(ZCub-1) + 0 + XCub ! this is the "image" of the block adjac
+         if (IndCon(iPNew).eq.indexP) Connection(5) = Connection(5) + 1
+       end if
 
-          !DEBUG__________________________________
-   !       write(6,'(" for Y IndCon(",i20,") : ",i20)') iPnew, IndCon(iPnew)
-          !DEBUG__________________________________
-          if(IndCon(iPNew).eq.indexP) Connection(2) = Connection(2) + 1
-
-       else if(ZCub.eq.1) then
-          ! This is the Z value of the near block on the other side of the cell
-          ZCubN = ZCub - 1            
-          ZCubN = Mod(ZCubN,nR(3)) + nR(3)
-          iPnew = iM2*(ZCubN-1) + nR(1)*(YCub-1) + XCub
-
-          !DEBUG__________________________________
-   !       write(6,'(" for Z IndCon(",i20,") : ",i20)') iPnew, IndCon(iPnew)
-          !DEBUG__________________________________
-          if(IndCon(iPNew).eq.indexP) Connection(3) = Connection(3) + 1
-
-       else if(XCub.eq.nR(1)) then
-          ! This is the X value of the near block on the other side of the cell
-          XCubN = XCub + 1            
-          XCubN = Mod(XCubN,nR(1))
-          iPnew = iM2*(ZCub-1) + nR(1)*(YCub-1) + XCubN
-
-          if(IndCon(iPNew).eq.indexP) Connection(4) = Connection(4) + 1
-          !DEBUG__________________________________
-   !       write(6,'(" for -X IndCon(",i20,") : ",i20)') iPnew, IndCon(iPnew)
-          !DEBUG__________________________________
-
-       else if(YCub.eq.nR(2)) then
-          ! This is the Y value of the near block on the other side of the cell
-          YCubN = YCub + 1            
-          YCubN = Mod(YCubN,nR(2))
-          iPnew = iM2*(ZCub-1) + nR(1)*(YCubN-1) + XCub
-
-          !DEBUG__________________________________
-   !       write(6,'(" for -Y IndCon(",i20,") : ",i20)') iPnew, IndCon(iPnew)
-          !DEBUG__________________________________
-          if(IndCon(iPNew).eq.indexP) Connection(5) = Connection(5) + 1
-
-       else if(ZCub.eq.nR(3)) then
-          ! This is the Z value of the near block on the other side of the cell
-          ZCubN = ZCub + 1            
-          ZCubN = Mod(ZCubN,nR(3))
-          iPnew = iM2*(ZCubN-1) + nR(1)*(YCub-1) + XCub
-
-          !DEBUG__________________________________
-   !       write(6,'(" for -Z IndCon(",i20,") : ",i20)') iPnew, IndCon(iPnew)
-          !DEBUG__________________________________
-          if(IndCon(iPNew).eq.indexP) Connection(6) = Connection(6) + 1
-       end if 
-    end do 
+       if (ZCub.eq.1) then ! this means that block iP is in the Z left border
+         iPNew = iM2*(nR(3)-1) + iM1*(YCub-1) + XCub ! this is the "image" of the
+         if (IndCon(iPNew).eq.indexP) Connection(3) = Connection(3) + 1
+       end if
+       if (ZCub.eq.nR(3)) then ! this means that block iP is in the Z right borde
+         iPNew = 0 + iM1*(YCub-1) + XCub ! this is the "image" of the block adjac
+         if (IndCon(iPNew).eq.indexP) Connection(6) = Connection(6) + 1
+       end if
+    end do
 
     ! Now all the blocks of the pore have been analyzed
     ! If the pore passes through from opposite sides of the cell both the connection's components 1-4 (or 2-5 or 3-6) are different from zero.
