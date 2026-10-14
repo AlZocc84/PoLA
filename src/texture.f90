@@ -85,7 +85,8 @@
               Overlap = .True.
               IndCav(iP) = 3
               NAccVol(iP) = .True. 
-              if(Connect.eq.2) IndCon(iP) = -2  !if the connectivity analysis is required with accessible volume, the IndCon(iP) is -2 (this block won't be considered for the connectivity.
+              if(Connect.eq.2) IndCon(iP) = -2  !if the connectivity analysis is required with accessible volume, 
+                                                !the IndCon(iP) is -2 (this block won't be considered for the connectivity.
            end if
 
          end do
@@ -93,6 +94,62 @@
      end do
 
    end do
+   
+   !=============================================================================================================================
+   do iP=1, nP
+     if (IndCav(iP).ne.0) cycle
+     ! Find the block Cartesian coordinates
+     iC = iP - 1
+     ZP = INT(iC/(iM2))*dMesh + dMesh/2.0d0
+     YP = INT(MOD(iC,iM2)/nR(1))*dMesh + dMesh/2.0d0
+     XP = MOD(MOD(iC,iM2),nR(1))*dMesh + dMesh/2.0d0
+     ! Check all the blocks that are closer than Rad1. 
+
+     lCube = nint(Rad1 / dMesh) + 1
+     do iX = -lCube,lCube
+       do iY = -lCube,lCube
+         do iZ = -lCube,lCube
+           iPNew = MoveCub(iP, iX, iY, iZ, nR)
+           ! We are interessed only to NOT Accessible blocks 
+           if (IndCav(iPNew).ne.3) cycle
+           ! Find the coordinates of the new block
+           iC = iPNew - 1
+           ZP1 = INT(iC/(iM2))*dMesh + dMesh/2.0d0
+           YP1 = INT(MOD(iC,iM2)/nR(1))*dMesh + dMesh/2.0d0
+           XP1 = MOD(MOD(iC,iM2),nR(1))*dMesh + dMesh/2.0d0
+
+           ! Compute the distance between blocks along the coordinates 
+           Dist_X = abs(XP - XP1)
+           Dist_Y = abs(YP - YP1)
+           Dist_Z = abs(ZP - ZP1)
+           ! If the checked block fell outside the cell, it was converted to its periodic image inside the cell
+           ! In this case, the distance results unexpectedly large, and it is recomputed correctly
+           if (Dist_X.gt.2.d0*Rad1) Dist_X = nR(1)*dMesh - Dist_X
+           if (Dist_Y.gt.2.d0*Rad1) Dist_Y = nR(2)*dMesh - Dist_Y
+           if (Dist_Z.gt.2.d0*Rad1) Dist_Z = nR(3)*dMesh - Dist_Z
+           ! Compute the actual distance
+           D = sqrt(Dist_X*Dist_X + Dist_Y*Dist_Y + Dist_Z*Dist_Z)
+         
+           ! If D is lower than RadAV The block falls into the sphere centered on the empty (accessible) block we are analyzing, 
+           ! so it is once again considered accessible.
+           if (D.le.RadAV) then
+              IndCav(iPNew) = 4
+              NAccVol(iPNew) = .False. 
+              if(Connect.eq.2) IndCon(iPNew) = 0  !Also for the connectivity, the block is once again considered accessible.
+           end if                       
+
+         end do
+       end do
+     end do
+
+   end do
+ 
+   !Now the blocks with indCav = 4, revert to have IndCav 0.
+   do iP=1,nP
+      if(IndCav(iP).eq.4) IndCav(iP) = 0
+   end do
+   !=============================================================================================================================
+
  end if
 
 ! Compute simplified, total cumulative volumes and surface
