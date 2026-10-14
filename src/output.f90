@@ -252,7 +252,7 @@
  if(Surf_Computation.eq.1) then
    write(7,*)
 
-   write(7,'("Total surface (m^2/g) (liquid nitrogen monolayer) /VmonoA3  ",f10.1)') &
+   write(7,'("Total surface (m^2/g) (liquid nitrogen monolayer)     ",f10.1)') &
                                                                            nMono_dens * N2_cross / SkM
    write(7,*)
    write(7,'("                                                        with MinD < 7 A    ",f8.1)') &
