@@ -1,7 +1,8 @@
  SUBROUTINE Input(dMesh,nR,nP,nAtm,AtmSym,IndCav,IndCon,DiamStep,RMin,MaxDiameter,Closed_Thresh,Print_xyz, &
-                 Surf_computation,RadS,RadAV,n_angles,versors,Accessible,IndSurf,Connect)
+                 Surf_computation,RadS,RadAV,n_angles,versors,Accessible,IndSurf,Connect,density,cross_section,molecular_mass)
  
  USE angle_scan
+ use gas_parameters, only: get_gas_parameters
 
  IMPLICIT NONE
  INTEGER, ALLOCATABLE, INTENT(OUT) :: IndCav(:), IndSurf(:), IndCon(:)
@@ -13,12 +14,12 @@
  REAL(DP), PARAMETER :: One=1.0d0, Two=2.0d0, Three=3.0d0, Four=4.0d0
  REAL(DP), PARAMETER :: Pi=Four*Atan(One)
  REAL(DP), PARAMETER :: dRad=Pi/nTh
- REAL(DP), INTENT(OUT) :: dMesh, DiamStep, RMin, Closed_Thresh, MaxDiameter, RadS, RadAV
+ REAL(DP), INTENT(OUT) :: dMesh, DiamStep, RMin, Closed_Thresh, MaxDiameter, RadS, RadAV, density, cross_section, molecular_mass
  REAL(DP), DIMENSION(:,:), ALLOCATABLE, INTENT(OUT) :: versors
  REAL(DP), ALLOCATABLE :: XAtm(:), YAtm(:), ZAtm(:)
  REAL(DP) :: Xmin, Ymin, Zmin, DX, DY, DZ, dist_x, dist_y, dist_z, D
  CHARACTER(2), ALLOCATABLE, INTENT(OUT) :: AtmSym(:)
- CHARACTER(100) :: File_name, line, print_por, Surf_com, Fix, do_ac_vol, do_connect
+ CHARACTER(100) :: File_name, line, print_por, Surf_com, Fix, do_ac_vol, do_connect, gas
  LOGICAL, INTENT(OUT) :: Accessible
  LOGICAL :: FixCoord
 
@@ -47,6 +48,10 @@
  n_angles = 120
  Accessible = .True.
  Connect = 0
+ gas = "N2"
+ density = 0.808
+ cross_section = 16.2
+ molecular_mass = 28.0d0
 
 ! Read values from input file 
  open(1, file='input.dat', status='old', form='formatted')
@@ -117,11 +122,11 @@
         end if
         if (surf_com(1:2).eq.'no') then
            surf_computation = 0
-        else if(surf_com(1:3).eq.'yes') then
+        else 
            surf_computation = 1
-        else
-           write(6,'("Error in file input: value for "A20" is invalid")') line
-           stop
+           gas = surf_com
+           !parameter assignment
+           call get_gas_parameters(gas, RadS, density, cross_section,molecular_mass)
         end if
 
      else if(line(3:9).eq.'FixBox') then
@@ -137,6 +142,9 @@
         if(ios.ne.0) then
                 write(6,'("Error in file input: value for "A20" is invalid")') line
                 stop
+        else
+          write(6,'("WARNING: The parameters for ",a," gas are used; &
+                     however, since a radius was explicitly requested, the RadS value used is: ",f12.6)') gas, RadS
         end if
 
      else if(line(3:29).eq.'Accessible_Volume_Probe_Rad') then
@@ -188,6 +196,7 @@
  end do
 
  close(1)
+
 
  !check that if Accessible is True, Connectivity IS NOT 1 (total)
  if (.not.Accessible) then

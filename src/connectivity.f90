@@ -10,8 +10,8 @@ subroutine Connectivity(IndCon,nR,dMesh,nP)
  INTEGER, INTENT(IN) :: nP
  REAL(DP), INTENT(IN) :: dMesh
  
- INTEGER :: iM1, iM2, XCub, YCub, ZCub, V, iP, iC, Npore, iPNew, indexP, XCubN, YCubN, ZCubN
- REAL(DP) :: XX, YY, ZZ, XP, YP, ZP
+ INTEGER :: iM1, iM2, XCub, YCub, ZCub, V, iP, iC, Npore, iPNew, indexP
+ REAL(DP) :: XX, YY, ZZ
 
  INTERFACE
    SUBROUTINE DefinePore(iP,Npore,V,nR,IndCon)

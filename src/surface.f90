@@ -1,4 +1,4 @@
- SUBROUTINE Surface(Surf_Computation,dMesh,nR,nP,RadS,nMono_dens,IndSurf)
+ SUBROUTINE Surface(Surf_Computation,dMesh,nR,nP,RadS,nMono_dens,IndSurf,density,molecular_mass)
 
  IMPLICIT NONE
 
@@ -7,12 +7,11 @@
  INTEGER, INTENT(IN) :: Surf_Computation, nP 
  INTEGER, DIMENSION(3), INTENT(IN) :: nR
  INTEGER, DIMENSION(:), INTENT(INOUT) :: IndSurf
- REAL(DP), INTENT(IN) :: dMesh, RadS
+ REAL(DP), INTENT(IN) :: dMesh, RadS, density, molecular_mass
  REAL(DP), INTENT(OUT) :: nMono_dens 
 
  REAL(DP) :: XP, YP, ZP, XP1, YP1, ZP1, Rad1
  REAL(DP) :: Dist_X, Dist_Y, Dist_Z, D, MonoVol
- REAL(DP), PARAMETER :: N2_Density = 0.808d0
 
 INTEGER :: iP, iPNew, iC, iX, iY, iZ, lCube, iM2
 Logical :: Overlap, Touch
@@ -146,7 +145,7 @@ Logical :: Overlap, Touch
  end do
 
 ! Find the number of spherical probes forming the monolayer
-! This if we use the liquid N2 density to estimate the molecules in the monolayer
- nMono_dens = (N2_density * 0.6022d0 * MonoVol / 28.0d0)
+! This if we use the liquid density to estimate the molecules in the monolayer
+ nMono_dens = (density * 0.6022d0 * MonoVol / molecular_mass)
 
  end

@@ -8,7 +8,7 @@ program pore_local_analysis
 
  INTEGER, PARAMETER :: DP = SELECTED_REAL_KIND(14)
  INTEGER, DIMENSION(:), ALLOCATABLE :: IndCav, IndSurf, IndCon
- INTEGER :: i, iP, nP, nAtm, iPN, iPNopp, n_angles, Npore, V, jP, MinD
+ INTEGER :: i, iP, nP, nAtm, iPN, iPNopp, n_angles
  INTEGER ::  iM1, iM2, XCub, YCub, ZCub, iC, Print_xyz, nVol, surf_computation, Connect
  INTEGER, DIMENSION(3) :: nR
  REAL(DP), PARAMETER :: Zero=0.0d0, One=1.0d0, Two=2.0d0, Three=3.0d0, Four=4.0d0, Six=6.0d0
@@ -20,7 +20,7 @@ program pore_local_analysis
  REAL(DP) :: UltraS, MicroS, SmallMesoS, LargeMesoS, MacroS
  REAL(DP) :: dX, dY, dZ, R, RMin, RMin_temp, RMax, RN, Ropp
  REAL(DP) :: dMesh, v_block, DiamStep, Closed_Thresh, MaxDiameter
- REAL(DP) :: SkV, SkM, SkD, RadS, RadAV, nMono_dens
+ REAL(DP) :: SkV, SkM, SkD, RadS, RadAV, nMono_dens, density, cross_section, molecular_mass
 
 !---------- DEBUG_ALL_DIST_11-06-2026-----------------
 ! REAL(DP), DIMENSION(:,:), ALLOCATABLE:: all_distances
@@ -40,12 +40,12 @@ program pore_local_analysis
      REAL(DP), INTENT(IN) :: dMesh
    END SUBROUTINE Connectivity
    SUBROUTINE Input(dMesh,nR,nP,nAtm,AtmSym,IndCav,IndCon,DiamStep,RMin,MaxDiameter,Closed_Thresh,Print_xyz, &
-                 surf_computation,RadS,RadAV,n_angles,versors,Accessible,IndSurf,Connect)
+                 surf_computation,RadS,RadAV,n_angles,versors,Accessible,IndSurf,Connect,density,cross_section,molecular_mass)
      INTEGER, PARAMETER :: DP = SELECTED_REAL_KIND(14)
      INTEGER, DIMENSION(:), ALLOCATABLE, INTENT(OUT) :: IndCav, IndSurf, IndCon
      INTEGER, INTENT(OUT) :: nP, nAtm, Print_xyz, surf_computation, n_angles, Connect
      INTEGER, DIMENSION(3), INTENT(OUT) :: nR
-     REAL(DP), INTENT(OUT) :: dMesh, DiamStep, RMin, Closed_Thresh, MaxDiameter, RadS, RadAV
+     REAL(DP), INTENT(OUT) :: dMesh, DiamStep, RMin, Closed_Thresh, MaxDiameter, RadS, RadAV, density, cross_section, molecular_mass
      REAL(DP), DIMENSION(:,:), ALLOCATABLE, INTENT(OUT) :: versors
      CHARACTER(2), DIMENSION(:), ALLOCATABLE, INTENT(OUT) :: AtmSym
      LOGICAL, INTENT(OUT) :: Accessible
@@ -68,12 +68,12 @@ program pore_local_analysis
      REAL(DP), INTENT(OUT) :: SkV, SkM, SkD
      CHARACTER(2), DIMENSION(:), INTENT(IN) :: AtmSym
    END SUBROUTINE Skel_Dens
-     SUBROUTINE Surface(Surf_Computation,dMesh,nR,nP,RadS,nMono_dens,IndSurf)
+     SUBROUTINE Surface(Surf_Computation,dMesh,nR,nP,RadS,nMono_dens,IndSurf,density,molecular_mass)
      INTEGER, PARAMETER :: DP = SELECTED_REAL_KIND(14)
      INTEGER, INTENT(IN) :: Surf_Computation, nP                                                                                                      
      INTEGER, DIMENSION(3), INTENT(IN) :: nR
      INTEGER, DIMENSION(:), INTENT(INOUT) :: IndSurf
-     REAL(DP), INTENT(IN) :: dMesh, RadS
+     REAL(DP), INTENT(IN) :: dMesh, RadS, density, molecular_mass
      REAL(DP), INTENT(OUT) :: nMono_dens
 
    END SUBROUTINE Surface                                             
@@ -94,14 +94,14 @@ program pore_local_analysis
    END SUBROUTINE Texture
    SUBROUTINE Output(dMesh,nR,nP,nVol,IndCav,DiamStep,Cumulative_VMinD,VMinD,Accessible, &
              UltraV,MicroV,SmallMesoV,LargeMesoV,MacroV,TotPorV,SkV,SkM,SkD,Print_xyz, &
-             RadS,surf_computation,UltraS,MicroS,SmallMesoS,LargeMesoS,MacroS,nMono_dens)
+             RadS,surf_computation,UltraS,MicroS,SmallMesoS,LargeMesoS,MacroS,nMono_dens,density,molecular_mass,cross_section)
      INTEGER, PARAMETER :: DP = SELECTED_REAL_KIND(14)
      INTEGER, DIMENSION(:), INTENT(IN) :: IndCav
      INTEGER, INTENT(IN) :: nP, nVol, Print_xyz, surf_computation
      INTEGER, DIMENSION(3), INTENT(IN) :: nR
      REAL(DP), INTENT(IN) :: dMesh, DiamStep, SkV, SkM, SkD, nMono_dens
      REAL(DP), INTENT(IN) :: UltraV, MicroV, SmallMesoV, LargeMesoV, MacroV, TotPorV
-     REAL(DP), INTENT(IN) :: UltraS, MicroS, SmallMesoS, LargeMesoS, MacroS, RadS 
+     REAL(DP), INTENT(IN) :: UltraS, MicroS, SmallMesoS, LargeMesoS, MacroS, RadS, density, molecular_mass, cross_section
      REAL(DP), DIMENSION(:), INTENT(IN) :: Cumulative_VMinD, VMinD
      LOGICAL, INTENT(IN) :: Accessible
    END SUBROUTINE Output
@@ -112,7 +112,14 @@ program pore_local_analysis
 ! and will contain a detailed classification of the void blocks (Volume and surface: <7A(ultramicro), >7 and <20 (micro), meso etc.)
 
  call Input(dMesh,nR,nP,nAtm,AtmSym,IndCav,IndCon,DiamStep,RMin,MaxDiameter,Closed_Thresh,Print_xyz, &
-                 surf_computation,RadS,RadAV,n_angles,versors,Accessible,IndSurf,Connect)
+                 surf_computation,RadS,RadAV,n_angles,versors,Accessible,IndSurf,Connect,density,cross_section,molecular_mass)
+
+!DEBUG_surface_gas--------------------------------------------------------------------
+! write(6,'("RadS = ",f12.6)') RadS
+! write(6,'("Density = ",f12.6)') density
+! write(6,'("Molecular Mass = ",f12.6)') molecular_mass
+! write(6,'("Cross section = ",f12.6)') cross_section 
+!DEBUG_surface_gas--------------------------------------------------------------------
 
  iM1 = nR(1)
  iM2 = nR(1)*nR(2)
@@ -121,7 +128,7 @@ program pore_local_analysis
  allocate(DistMin(nP))
  DistMin = 0.0d0
 
-!nVol = INT(MaxDiameter / DiamStep)
+! nVol = INT(MaxDiameter / DiamStep)
 ! To obtain comparable files of local volumes and VMinD, the maximum diameter in the output
 ! is set to 120 A, way larger than the affordable porosities...
  nVol = INT(120/DiamStep)
@@ -275,7 +282,7 @@ program pore_local_analysis
  call Skel_Dens(dMesh,nP,IndCav,nAtm,AtmSym,SkV,SkM,SkD)
  
  ! Compute specific surface
- call Surface(Surf_Computation,dMesh,nR,nP,RadS,nMono_dens,IndSurf) 
+ call Surface(Surf_Computation,dMesh,nR,nP,RadS,nMono_dens,IndSurf,density,molecular_mass) 
  
  call Texture(nP,dMesh,nVol,DiamStep,VMinD,Cumulative_VMinD,UltraV,MicroV,SmallMesoV,LargeMesoV,MacroV,TotPorV,nR,iM1,iM2,&     
       surf_computation,DistMin,UltraS,MicroS,SmallMesoS,LargeMesoS,MacroS,RadAV,IndCav,Surf,Accessible,IndSurf,IndCon,Connect)
@@ -289,7 +296,7 @@ program pore_local_analysis
 ! Write the results
  call Output(dMesh,nR,nP,nVol,IndCav,DiamStep,Cumulative_VMinD,VMinD,Accessible, &
              UltraV,MicroV,SmallMesoV,LargeMesoV,MacroV,TotPorV,SkV,SkM,SkD,Print_xyz, &
-             RadS,surf_computation,UltraS,MicroS,SmallMesoS,LargeMesoS,MacroS,nMono_dens)
+             RadS,surf_computation,UltraS,MicroS,SmallMesoS,LargeMesoS,MacroS,nMono_dens,density,molecular_mass,cross_section)
 
  stop
  end
