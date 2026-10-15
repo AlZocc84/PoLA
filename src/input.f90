@@ -17,11 +17,11 @@
  REAL(DP), INTENT(OUT) :: dMesh, DiamStep, RMin, Closed_Thresh, MaxDiameter, RadS, RadAV, density, cross_section, molecular_mass
  REAL(DP), DIMENSION(:,:), ALLOCATABLE, INTENT(OUT) :: versors
  REAL(DP), ALLOCATABLE :: XAtm(:), YAtm(:), ZAtm(:)
- REAL(DP) :: Xmin, Ymin, Zmin, DX, DY, DZ, dist_x, dist_y, dist_z, D
+ REAL(DP) :: Xmin, Ymin, Zmin, DX, DY, DZ, dist_x, dist_y, dist_z, D, REQRadS
  CHARACTER(2), ALLOCATABLE, INTENT(OUT) :: AtmSym(:)
  CHARACTER(100) :: File_name, line, print_por, Surf_com, Fix, do_ac_vol, do_connect, gas
  LOGICAL, INTENT(OUT) :: Accessible
- LOGICAL :: FixCoord
+ LOGICAL :: FixCoord, Require_radS
 
  INTERFACE
    FUNCTION FindRvdW(Symb)
@@ -52,6 +52,7 @@
  density = 0.808
  cross_section = 16.2
  molecular_mass = 28.0d0
+ Require_radS = .False.
 
 ! Read values from input file 
  open(1, file='input.dat', status='old', form='formatted')
@@ -138,13 +139,12 @@
         end if
         
      else if(line(3:19).eq.'Surface_Probe_Rad') then
-        read(1,*,iostat=ios) RadS            ! radius in A of the probe used for the surface computation
+        read(1,*,iostat=ios) REQRadS            ! radius in A of the probe used for the surface computation
         if(ios.ne.0) then
                 write(6,'("Error in file input: value for "A20" is invalid")') line
                 stop
         else
-          write(6,'("WARNING: The parameters for ",a," gas are used; &
-                     however, since a radius was explicitly requested, the RadS value used is: ",f12.6)') gas, RadS
+          Require_radS = .True.
         end if
 
      else if(line(3:29).eq.'Accessible_Volume_Probe_Rad') then
@@ -198,6 +198,16 @@
  close(1)
 
 
+! WARNING if a surface probe is explicitly required
+ if(Require_radS) then
+    write(6,'("WARNING: The parameters for ",a," gas are used; &
+               however, since a radius was explicitly requested, the RadS value used is: ",f12.6)') trim(gas), REQRadS
+    RadS = REQRadS
+ end if
+
+! WARNING if two different radius are used
+ if(RadAV.ne.RadS) write(6,'("WARNING: the radius for Surface analysis (",f12.6," A) &
+                                       is differnt from the radius for Accessible volume analysis (",f12.6," A)")') RadS, RadAV 
  !check that if Accessible is True, Connectivity IS NOT 1 (total)
  if (.not.Accessible) then
     if (Connect.eq.2) then
