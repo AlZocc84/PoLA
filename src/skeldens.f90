@@ -37,10 +37,48 @@
        SkM = SkM + 14.0d0
      elseif(AtmSym(iAtm).eq."Si") then
        SkM = SkM + 28.0d0
-     elseif(AtmSym(iAtm).eq."SA") then
-       SkM = SkM + 100.0d0
+     elseif(AtmSym(iAtm).eq."Zn") then
+       SkM = SkM + 65.4d0
+     elseif(AtmSym(iAtm).eq."P") then
+       SkM = SkM + 30.9d0
+     elseif(AtmSym(iAtm).eq."Ca") then
+       SkM = SkM + 40.0d0
+     elseif(AtmSym(iAtm).eq."S") then
+       SkM = SkM + 32.1d0
+     elseif(AtmSym(iAtm).eq."F") then
+       SkM = SkM + 19.0d0
+     elseif(AtmSym(iAtm).eq."Na") then
+       SkM = SkM + 23.0d0
+     elseif(AtmSym(iAtm).eq."Cl") then
+       SkM = SkM + 35.5d0
+     elseif(AtmSym(iAtm).eq."Br") then
+       SkM = SkM + 79.9d0
+     elseif(AtmSym(iAtm).eq."Ga") then
+       SkM = SkM + 69.7d0
+     elseif(AtmSym(iAtm).eq."Fe") then
+       SkM = SkM + 55.8d0
+     elseif(AtmSym(iAtm).eq."Al") then
+       SkM = SkM + 27.0d0
+     elseif(AtmSym(iAtm).eq."B") then
+       SkM = SkM + 10.8d0
+     elseif(AtmSym(iAtm).eq."In") then
+       SkM = SkM + 114.8d0
+     elseif(AtmSym(iAtm).eq."Ti") then
+       SkM = SkM + 47.9d0
+     elseif(AtmSym(iAtm).eq."Sc") then
+       SkM = SkM + 45.0d0
+     elseif(AtmSym(iAtm).eq."Sn") then
+       SkM = SkM + 118.7d0
+     elseif(AtmSym(iAtm).eq."Ge") then
+       SkM = SkM + 72.6d0
+     elseif(AtmSym(iAtm).eq."Te") then
+       SkM = SkM + 127.6d0
+     elseif(AtmSym(iAtm).eq."ZZ") then
+       SkM = SkM + 0.5d0
+     elseif(AtmSym(iAtm).eq."AZ") then
+       SkM = SkM + 105.0d0
      else
-       write(6,'("SkM not defined for ",a2)') AtmSym(iAtm)
+       write(6,'("Atom weight not defined for ",a2)') AtmSym(iAtm)
        stop
      end if
    end do
