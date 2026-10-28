@@ -80,8 +80,9 @@
            ! Compute the actual distance
            D = sqrt(Dist_X*Dist_X + Dist_Y*Dist_Y + Dist_Z*Dist_Z)
          
+
            ! If D is lower than Rad1 the block overlaps with the probe, and it is part of the Not Accessible volume
-           if (D.le.Rad1) then
+           if (D.lt.RadAV) then
               Overlap = .True.
               IndCav(iP) = 3
               NAccVol(iP) = .True. 

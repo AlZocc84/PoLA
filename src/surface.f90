@@ -78,7 +78,7 @@ Logical :: Overlap, Touch
          if (Dist_Z.gt.2.d0*Rad1) Dist_Z = nR(3)*dMesh - Dist_Z
 ! Compute the actual distance
          D = sqrt(Dist_X*Dist_X + Dist_Y*Dist_Y + Dist_Z*Dist_Z)
-         
+
 ! If D is lower than RadS the block overlaps with the probe, and it will be discarded later
          if (D.lt.RadS) Overlap = .True.
 ! If D is between RadS and Rad1 the probe touches this block 
