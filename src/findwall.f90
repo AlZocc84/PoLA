@@ -10,14 +10,13 @@
  INTEGER :: iM1, iM2, iStep, dXcub, dYcub, dZcub, MaxR
  INTEGER ::  XCubN, YCubN, ZCubN, XCubTest, YCubTest, ZCubTest
  REAL(DP), INTENT(IN) :: dMesh, dX, dY, dZ
- REAL(DP) :: X, Y, Z, R2, R, fact
+ REAL(DP) :: X, Y, Z, R2, R, DeltaX, DeltaY, DeltaZ
  LOGICAL, INTENT(OUT) :: Found
  LOGICAL Void
 
  iM1 = nR(1)  
  iM2 = nR(1)*nR(2)  
  MaxR= max(nR(1),nR(2),nR(3))
- fact = 1.0
 
 ! Move along the selected direction from iP until a filled block is found
  iStep = 0
@@ -29,21 +28,14 @@
 
    ! Now getting the actual length of vector. steps are effecetively dMesh long (or we risk missing filled blocks.)
    ! If getting out of the cell on any direction mark not found.
-   X = iStep*dX*(dMesh*fact)
-   if(abs(X).ge.nR(1)*dMesh) then  
+   X = iStep*dX*dMesh
+   Y = iStep*dY*dMesh
+   Z = iStep*dZ*dMesh
+
+   if(abs(X).ge.nR(1)*dMesh .OR. abs(Y).ge.nR(2)*dMesh .OR. abs(Z).ge.nR(3)*dMesh) then  
     Found = .False.
-    go to 10
+    exit
    end if 
-   Y = iStep*dY*(dMesh*fact)
-   if(abs(Y).ge.nR(2)*dMesh) then  
-    Found = .False.
-    go to 10
-   end if 
-   Z = iStep*dZ*(dMesh*fact)
-   if(abs(Z).ge.nR(3)*dMesh) then  
-    Found = .False.
-    go to 10
-   end if
   
 ! How many blocks we have to cross in X, Y, Z respectively?
    dXcub = NINT(X/dMesh) 
@@ -83,15 +75,20 @@
    if(IndCav(iPN).eq.1) Void = .False.
    if(iPN.eq.iP) then
      Found = .False.
-     go to 10
+     exit 
    end if
  end do
 
 ! When the wall has been hit, compute the distance from point iP
- R2 = X**2 + Y**2 + Z**2
- R = sqrt(R2)
+ if (Found) then
+!  Center_to_center distance
+   DeltaX = (XCubN - XCub) * dMesh
+   DeltaY = (YCubN - YCub) * dMesh
+   DeltaZ = (ZCubN - ZCub) * dMesh
+   R2 = DeltaX**2 + DeltaY**2 + DeltaZ**2
+   R = sqrt(R2)
+ end if
  
-10 continue
  return
  end
 
