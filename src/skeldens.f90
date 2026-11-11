@@ -77,6 +77,8 @@
        SkM = SkM + 0.5d0
      elseif(AtmSym(iAtm).eq."AZ") then
        SkM = SkM + 105.0d0
+     elseif(AtmSym(iAtm).eq."Cu") then
+       SkM = SkM + 63.5d0
      else
        write(6,'("Atom weight not defined for ",a2)') AtmSym(iAtm)
        stop
