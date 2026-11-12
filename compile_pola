@@ -1,9 +1,9 @@
 #
 cd src
 for file in *f90; do
-  gfortran -g -Wunused -fdebug-aux-vars -fbounds-check -ffpe-trap=invalid,zero,overflow,underflow -c $file
+  gfortran -g -fopenmp -Wunused -fdebug-aux-vars -fbounds-check -ffpe-trap=invalid,zero,overflow,underflow -c $file
   #gfortran -c $file
 done
 cd ..
 
-gfortran -o pola src/*.o
+gfortran -fopenmp -o pola src/*.o

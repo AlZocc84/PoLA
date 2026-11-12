@@ -3,7 +3,7 @@ program pore_local_analysis
 !****************************************************************************************************************
 ! Analyze the Local Porous Volume Distribution of a given porous material, through detailed geometrical analysis
 !****************************************************************************************************************
-
+ USE OMP_LIB
  IMPLICIT NONE
 
  INTEGER, PARAMETER :: DP = SELECTED_REAL_KIND(14)
@@ -107,6 +107,7 @@ program pore_local_analysis
    END SUBROUTINE Output
  END INTERFACE
 
+
 ! Read in the mesh coordinates of the material: input, xyz file; output, 
 ! IndCav vector starts with 1 for "occupied" and 0 for void blocks
 ! and will contain a detailed classification of the void blocks (Volume and surface: <7A(ultramicro), >7 and <20 (micro), meso etc.)
@@ -153,6 +154,18 @@ program pore_local_analysis
  !write(1,'("# Index    XCub  YCub  ZCub   MinD")')
  !---------------------DEBUG_WRITE_MinD_IN_FILE--------------
 
+ !DEBUG___Nthreads________________________
+ !$OMP PARALLEL
+ !$OMP SINGLE
+ write(6,'("OpenMP threads:",i6)') OMP_GET_NUM_THREADS()
+ !$OMP END SINGLE
+ !$OMP END PARALLEL
+ !DEBUG___Nthreads________________________
+
+ !$OMP PARALLEL DO DEFAULT(SHARED) &
+ !$OMP PRIVATE(iP,i,iC,XCub,YCub,ZCub,iPN,iPNopp) &
+ !$OMP PRIVATE(dX,dY,dZ,R,RMin_temp,RMax,RN,Ropp,Found) &
+ !$OMP SCHEDULE(DYNAMIC,1)
  do iP = 1, nP
 
  !---------------------DEBUG_WRITE_MinD_IN_FILE--------------
@@ -269,6 +282,7 @@ program pore_local_analysis
    end if
 
  end do
+ !$OMP END PARALLEL DO
 
 !---------------------DEBUG_WRITE_MinD_IN_FILE--------------
 ! close(1)
