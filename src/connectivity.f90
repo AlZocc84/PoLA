@@ -7,6 +7,7 @@ subroutine Connectivity(IndCon,nR,dMesh,nP)
  INTEGER, DIMENSION(:), INTENT(INOUT) :: IndCon
  INTEGER, DIMENSION(3), INTENT(IN) :: nR
  INTEGER, DIMENSION(6) :: Connection
+ LOGICAL, DIMENSION(:), ALLOCATABLE :: Reachable
  INTEGER, INTENT(IN) :: nP
  REAL(DP), INTENT(IN) :: dMesh
  
@@ -29,6 +30,18 @@ subroutine Connectivity(IndCon,nR,dMesh,nP)
  ! Find connectivity
  ! At the beginning the Number of pore is set to Zero
  Npore = 0
+
+ ! Allocate the Reachable array
+ ! This is an array of logical values: if the 1 value is True
+ ! that means that the pore n.1 is Reachable
+ ! If the 2 value is False, the pore n.2 is Not Reachable
+ ! What is the dimension? What is the maxium value of the possible pores?
+ ! N_pore_max = nP/2 for a grid with an even number of cubes
+ ! N_pore_max = nP/2 +1 for a grid with an odd number of cubes
+ ! So we use the maximum number
+
+ N_pore_max = (nP/2) + 1
+ allocate(Reachable(N_pore_max)) 
 
  open(1,file='pores.txt',status='unknown',form='formatted')
  write(1,'("             Pore number           Volume (A^3 / cell)")')
