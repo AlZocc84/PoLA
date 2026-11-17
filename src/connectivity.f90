@@ -346,4 +346,14 @@ subroutine Connectivity(IndCon,nR,dMesh,nP)
    end do
  close(3)
 
+!DEBUG--------------------------------------------------------
+ do i = 1, NPore
+ write(6,'(i3)') NewInd(i)
+ end do
+
+ do i = 1, NPore
+ write(6,'(i3)') Updated_Index(i)
+ end do
+!DEBUG--------------------------------------------------------
+
 end
