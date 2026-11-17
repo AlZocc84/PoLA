@@ -8,10 +8,12 @@ subroutine Connectivity(IndCon,nR,dMesh,nP)
  INTEGER, DIMENSION(3), INTENT(IN) :: nR
  INTEGER, DIMENSION(6) :: Connection
  LOGICAL, DIMENSION(:), ALLOCATABLE :: Reachable
+ INTEGER, DIMENSION(:), ALLOCATABLE :: NewInd, Updated_Index
+ REAL(DP), DIMENSION(:), ALLOCATABLE ::Volumes
  INTEGER, INTENT(IN) :: nP
  REAL(DP), INTENT(IN) :: dMesh
  
- INTEGER :: iM1, iM2, XCub, YCub, ZCub, V, iP, iC, Npore, iPNew, indexP
+ INTEGER :: iM1, iM2, XCub, YCub, ZCub, V, iP, iC, Npore, iPNew, indexP, count_pore, higher, lower, i, iPi, iPj
  REAL(DP) :: XX, YY, ZZ
 
  INTERFACE
@@ -31,34 +33,34 @@ subroutine Connectivity(IndCon,nR,dMesh,nP)
  ! At the beginning the Number of pore is set to Zero
  Npore = 0
 
- ! Allocate the Reachable array
- ! This is an array of logical values: if the 1 value is True
- ! that means that the pore n.1 is Reachable
- ! If the 2 value is False, the pore n.2 is Not Reachable
- ! What is the dimension? What is the maxium value of the possible pores?
- ! N_pore_max = nP/2 for a grid with an even number of cubes
- ! N_pore_max = nP/2 +1 for a grid with an odd number of cubes
- ! So we use the maximum number
-
- N_pore_max = (nP/2) + 1
- allocate(Reachable(N_pore_max)) 
-
- open(1,file='pores.txt',status='unknown',form='formatted')
- write(1,'("             Pore number           Volume (A^3 / cell)")')
  do iP =1, nP
     if(IndCon(iP).ne.0) cycle    ! Only the void blocks can be part of a pore, obviously, so we skip the filled blocks
     Npore = Npore + 1
     IndCon(iP) = Npore
        
     call DefinePore(iP,Npore,V,nR,IndCon)
-    write(1,'("Found the pore ",i5," with volume ",i12)') Npore, V
    
  end do
- close(1)
+
+ ! Allocate the Reachable array
+ ! This is an array of logical values: if the 1 value is True
+ ! that means that the pore n.1 is Reachable
+ ! If the 2 value is False, the pore n.2 is Not Reachable
+
+ allocate(Reachable(Npore)) 
+ allocate(Updated_Index(Npore)) 
+ allocate(NewInd(Npore)) 
+ allocate(Volumes(Npore)) 
+ Reachable = .False.
+ Volumes = -1
+ Updated_Index = -1
+ NewInd = -1
+ do i = 1, NPore
+   NewInd(i) = i
+ end do
 
  ! Find the pores passing through from opposite sides of the cell
  ! Loop over the pores:
- open(2,file='connectivity.txt',status='unknown',form='formatted')
  do indexP = 1, Npore
 
     ! Connection is an array with 6 value:
@@ -133,18 +135,189 @@ subroutine Connectivity(IndCon,nR,dMesh,nP)
                                     (Connection(2).ne.0.and.Connection(5).ne.0).or.&
                                           (Connection(3).ne.0.and.Connection(6).ne.0)) then
 
-       write(2,'("Pore ",i20," REACHABLE")') indexP
+       Reachable(indexP) = .True.
+       !write(2,'("Pore ",i20," REACHABLE")') indexP
 
     else
 
-       write(2,'("Pore ",i20," NOT REACHABLE")') indexP
+       !write(2,'("Pore ",i20," NOT REACHABLE")') indexP
        
     end if
 
  end do
- close(2) 
 
+ ! Now, we need to adjust the number of pores:
+ ! The different pores that "touch" eachothers on the side of the cell, are the same pore.
+ ! Analizing the X face:
+ do ZCub = 1, nR(3)
+    do YCub = 1, nR(2)
+
+        iPi = iM2*(ZCub-1) + iM1*(YCub-1) + 1
+        iPj = iM2*(ZCub-1) + iM1*(YCub-1) + nR(1)
+        if((IndCon(iPi).lt.0).or.(IndCon(iPJ).lt.0)) cycle
+
+        ! Check the value of IndCav
+        ! if the two blocks have the same indcon, it's ok, it's already the same pore
+        ! so in the new array the index of the pore will be unchanged
+        if(IndCon(iPi).eq.IndCon(iPj)) then
+           NewInd(IndCon(iPi)) = IndCon(iPi)
+        else
+           lower = min(IndCon(iPi),IndCon(iPj))
+           higher = max(IndCon(iPi),IndCon(iPj))
+           ! we want to check if the pore with the lower indCon has already been merged with another pore
+           ! in thi case the NewIndCon of the higher indCon will be IndCon(min)
+           ! for example: IndCon(iPi) = 3
+           ! IndCon(iPj) = 8
+           ! if NewInd(3) is 3 that means that the pore 3 is not merged with another pore
+           ! So we can merge pore 8 and 3 in the pore n.3, so NewInd(8) = 3
+           ! istead
+           ! if NewInd(3) is different from 3 that means that the pore 3 is merged with another pore (e.g 1)
+           ! So also the pore 8 will be merged with the pore e.g. 1
+           
+           if(NewInd(lower).eq.lower) then
+             NewInd(higher) = lower
+           else
+             NewInd(higher) = NewInd(lower)
+           end if
+
+           ! Now we need to check if there were some pores already merged with the higher, 
+           ! and in that case merge it with the lower
+           do i = higher, Npore
+              if (NewInd(i).eq.higher) NewInd(i) = lower
+           end do
+           
+           ! We need to update the Reachable value:
+           ! If we merge the pore 3 and 8, if one of the two is accessible, then the merged pore will also be accessible
+           if(Reachable(lower).or.Reachable(higher)) Reachable(lower) = .True.
+        end if
+
+    end do
+ end do
+ ! Analizing the Y face:
+ do ZCub = 1, nR(3)
+    do XCub = 1, nR(1)
+
+        iPi = iM2*(ZCub-1) + XCub
+        iPj = iM2*(ZCub-1) + iM1*(nR(2)-1) + XCub
+        if((IndCon(iPi).lt.0).or.(IndCon(iPJ).lt.0)) cycle
+        ! Check the value of IndCav
+        ! if the two blocks have the same indcon, it's ok, it's already the same pore
+        ! so in the new array the index of the pore will be unchanged
+        if(IndCon(iPi).eq.IndCon(iPj)) then
+           NewInd(IndCon(iPi)) = IndCon(iPi)
+        else
+           lower = min(IndCon(iPi),IndCon(iPj))
+           higher = max(IndCon(iPi),IndCon(iPj))
+           ! we want to check if the pore with the lower indCon has already been merged with another pore
+           ! in thi case the NewIndCon of the higher indCon will be IndCon(min)
+           ! for example: IndCon(iPi) = 3
+           ! IndCon(iPj) = 8
+           ! if NewInd(3) is 3 that means that the pore 3 is not merged with another pore
+           ! So we can merge pore 8 and 3 in the pore n.3, so NewInd(8) = 3
+           ! istead
+           ! if NewInd(3) is different from 3 that means that the pore 3 is merged with another pore (e.g 1)
+           ! So also the pore 8 will be merged with the pore e.g. 1
+           
+           if(NewInd(lower).eq.lower) then
+             NewInd(higher) = lower
+           else
+             NewInd(higher) = NewInd(lower)
+           end if
+
+           ! Now we need to check if there were some pores already merged with the higher, 
+           ! and in that case merge it with the lower
+           do i = higher, Npore
+              if (NewInd(i).eq.higher) NewInd(i) = lower
+           end do
+           ! We need to update the Reachable value:
+           ! If we merge the pore 3 and 8, if one of the two is accessible, then the merged pore will also be accessible
+           if(Reachable(lower).or.Reachable(higher)) Reachable(lower) = .True.
+
+        end if
+
+    end do
+ end do
+   
+ ! Analizing the Z face:
+ do YCub = 1, nR(2)
+    do XCub = 1, nR(1)
+
+        iPi = iM1*(YCub-1) + XCub
+        iPj = iM2*(nR(3)-1) + iM1*(YCub-1) + XCub
+        if((IndCon(iPi).lt.0).or.(IndCon(iPJ).lt.0)) cycle
+        ! Check the value of IndCav
+        ! if the two blocks have the same indcon, it's ok, it's already the same pore
+        ! so in the new array the index of the pore will be unchanged
+        if(IndCon(iPi).eq.IndCon(iPj)) then
+           NewInd(IndCon(iPi)) = IndCon(iPi)
+        else
+           lower = min(IndCon(iPi),IndCon(iPj))
+           higher = max(IndCon(iPi),IndCon(iPj))
+           ! we want to check if the pore with the lower indCon has already been merged with another pore
+           ! in thi case the NewIndCon of the higher indCon will be IndCon(min)
+           ! for example: IndCon(iPi) = 3
+           ! IndCon(iPj) = 8
+           ! if NewInd(3) is 3 that means that the pore 3 is not merged with another pore
+           ! So we can merge pore 8 and 3 in the pore n.3, so NewInd(8) = 3
+           ! istead
+           ! if NewInd(3) is different from 3 that means that the pore 3 is merged with another pore (e.g 1)
+           ! So also the pore 8 will be merged with the pore e.g. 1
+           
+           if(NewInd(lower).eq.lower) then
+             NewInd(higher) = lower
+           else
+             NewInd(higher) = NewInd(lower)
+           end if
+
+           ! Now we need to check if there were some pores already merged with the higher, 
+           ! and in that case merge it with the lower
+           do i = higher, Npore
+              if (NewInd(i).eq.higher) NewInd(i) = lower
+           end do
+           ! We need to update the Reachable value:
+           ! If we merge the pore 3 and 8, if one of the two is accessible, then the merged pore will also be accessible
+           if(Reachable(lower).or.Reachable(higher)) Reachable(lower) = .True.
+
+        end if
+
+    end do
+ end do
+
+ !Now change the value of IndCon and compute the volume of the pores
+ do iP = 1, nP
+   if(IndCon(iP).lt.0) cycle
+   !DEBUG----------------------------------
+   if(NewInd(IndCon(iP)).le.0) then
+
+     write(6,'("ERROR")')
+     write(6,'("iP: ",i20)') iP
+     write(6,'("IndCon(iP): ",i20)') IndCon(iP)
+     write(6,'("NewInd(IndCon(iP)): ",i20)') NewInd(IndCon(iP))
+
+   end if
+   !DEBUG----------------------------------
+   Volumes(NewInd(IndCon(iP))) = Volumes(NewInd(IndCon(iP))) + dMesh*dMesh*dMesh
+   IndCon(iP) = NewInd(IndCon(iP)) 
+ end do
+   
  ! Write the xyz output file
+ count_pore = 0
+ open(1,file='pores.txt',status='unknown',form='formatted')
+ write(1,'("             Pore number           Volume (A^3 / cell)")')
+ open(2,file='connectivity.txt',status='unknown',form='formatted')
+ do indexP = 1, Npore
+    if (Volumes(indexP).eq.-1) cycle
+    count_pore = count_pore + 1
+    Updated_Index(indexP) = count_pore
+    if(Reachable(indexP)) then
+      write(1,'("Found the channel ",i0," with volume ",f12.6)') count_pore, Volumes(IndexP)
+      write(2,'("Channel ",i0," REACHABLE")') count_pore
+    else
+      write(1,'("Found the pore ",i0," with volume ",f12.6)') count_pore, Volumes(IndexP)
+      write(2,'("Pore ",i0," NOT REACHABLE")') count_pore
+    end if
+ end do
+
  open(3,file='pores.xyz',status='unknown',form='formatted')
  write(3,*)nP
    write(3,*)
@@ -163,7 +336,11 @@ subroutine Connectivity(IndCon,nR,dMesh,nP)
      else if (IndCon(iP).eq.(-2)) then
        write(3,'("NV",3f12.6)')XX,YY,ZZ   ! NV is the name assigned to the Not accessible Volume 
      else 
-       write(3,'(i5,3f12.6)')IndCon(iP),XX,YY,ZZ ! the pores are identified with numbers: 1 will be rapresented by VMD with H, 2 with He, ecc..
+       if(Reachable(IndCon(iP))) then
+          write(3,'("CHANNEL",i0,3f12.6)')Updated_Index(IndCon(iP)),XX,YY,ZZ ! the pores are identified with numbers: 1 will be rapresented by VMD with H, 2 with He, ecc..
+       else
+          write(3,'("PORE",i0,3f12.6)')Updated_Index(IndCon(iP)),XX,YY,ZZ ! the pores are identified with numbers: 1 will be rapresented by VMD with H, 2 with He, ecc..
+       end if
      end if
  
    end do
