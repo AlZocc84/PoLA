@@ -36,6 +36,11 @@ Logical :: Overlap, Touch
  iM2 = nR(1) * nR(2)
  Rad1 = RadS + 0.6*dMesh
 
+ !$OMP PARALLEL DO DEFAULT(NONE) &
+ !$OMP SHARED(nP,nR,dMesh,RadS,Rad1,iM2,IndSurf) &
+ !$OMP PRIVATE(iP,iC,iX,iY,iZ,iPNew,lCube, &
+ !$OMP XP,YP,ZP,XP1,YP1,ZP1,Dist_X,Dist_Y,Dist_Z,D, &
+ !$OMP Overlap,Touch) SCHEDULE(STATIC)
  do iP = 1, nP
 ! Loop only on void blocks
 ! (At beginning IndSurf = 0: void block, IndSurf = -1: filled block)
@@ -92,7 +97,14 @@ Logical :: Overlap, Touch
      IndSurf(iP) = 1
    end if
  end do 
+ !$OMP END PARALLEL DO
 
+
+ !$OMP PARALLEL DO DEFAULT(NONE) &
+ !$OMP SHARED(nP,nR,dMesh,RadS,Rad1,iM2,IndSurf) &
+ !$OMP PRIVATE(iP,iC,iX,iY,iZ,iPNew,lCube, &
+ !$OMP XP,YP,ZP,XP1,YP1,ZP1,Dist_X,Dist_Y,Dist_Z,D, &
+ !$OMP Overlap,Touch) SCHEDULE(STATIC)
 ! Compute the number of void blocks belonging to one of the spherical probes which form the surface monolayer
  do iP = 1, nP
 ! Loop only on blocks which could host the center of a probe touching the surface 
@@ -135,6 +147,7 @@ Logical :: Overlap, Touch
      end do
    end do
  end do
+ !$OMP END PARALLEL DO
 
 ! Compute the volume of the surface monolayer
  MonoVol = 0.0d0

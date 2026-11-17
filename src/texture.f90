@@ -41,6 +41,11 @@
 
 !Compute the Accessible volume, if required
  if(Accessible) then
+   !$OMP PARALLEL DO DEFAULT(NONE) &
+   !$OMP SHARED(nP,nR,dMesh,RadAV,Rad1,iM2,IndCon,IndCav,NAccVol,Connect) &
+   !$OMP PRIVATE(iP,iC,iX,iY,iZ,iPNew,lCube, &
+   !$OMP XP,YP,ZP,XP1,YP1,ZP1,Dist_X,Dist_Y,Dist_Z,D, &
+   !$OMP Overlap) SCHEDULE(STATIC)
    do iP=1,nP
      if(IndCav(iP).ne.0) cycle
 
@@ -95,8 +100,14 @@
      end do
 
    end do
-   
+   !$OMP END PARALLEL DO
+
    !=============================================================================================================================
+   !$OMP PARALLEL DO DEFAULT(NONE) &
+   !$OMP SHARED(nP,nR,dMesh,RadAV,Rad1,iM2,IndCon,IndCav,NAccVol,Connect) &
+   !$OMP PRIVATE(iP,iC,iX,iY,iZ,iPNew,lCube, &
+   !$OMP XP,YP,ZP,XP1,YP1,ZP1,Dist_X,Dist_Y,Dist_Z,D, &
+   !$OMP Overlap) SCHEDULE(STATIC)
    do iP=1, nP
      if (IndCav(iP).ne.0) cycle
      ! Find the block Cartesian coordinates
@@ -144,11 +155,16 @@
      end do
 
    end do
+   !$OMP END PARALLEL DO
  
    !Now the blocks with indCav = 4, revert to have IndCav 0.
+   !$OMP PARALLEL DO DEFAULT(NONE) &
+   !$OMP SHARED(nP,IndCav) &
+   !$OMP PRIVATE(iP) SCHEDULE(STATIC)
    do iP=1,nP
       if(IndCav(iP).eq.4) IndCav(iP) = 0
    end do
+   !$OMP END PARALLEL DO
    !=============================================================================================================================
 
  end if
@@ -186,6 +202,10 @@
 !   12       vol large meso (35 < Rmin < 50 A)
 !   13       vol macro (Rmin > 50 A)           
 
+ !Now the blocks with indCav = 4, revert to have IndCav 0.
+ !$OMP PARALLEL DO DEFAULT(NONE) &
+ !$OMP SHARED(nP,IndCav,IndSurf,DistMin) &
+ !$OMP PRIVATE(iP) SCHEDULE(STATIC)
  do iP= 1, nP
     if (IndCav(iP).eq.1.OR.IndCav(iP).eq.2) cycle     !Filled blocks
     
@@ -217,6 +237,7 @@
           end if
     end if
  end do
+ !$OMP END PARALLEL DO
 
 !  Fill VMinD array with the accessible volume  
  do iP = 1,nP
