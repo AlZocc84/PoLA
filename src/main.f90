@@ -22,7 +22,7 @@ program pore_local_analysis
  REAL(DP) :: dMesh, v_block, DiamStep, Closed_Thresh, MaxDiameter
  REAL(DP) :: SkV, SkM, SkD, RadS, RadAV, nMono_dens, density, cross_section, molecular_mass
  !--DEBUG_TIME-------------------------
- REAL(DP) :: t0, t1
+! REAL(DP) :: t0, t1
  !--DEBUG_TIME-------------------------
 
 
@@ -115,11 +115,11 @@ program pore_local_analysis
 ! Read in the mesh coordinates of the material: input, xyz file; output, 
 ! IndCav vector starts with 1 for "occupied" and 0 for void blocks
 ! and will contain a detailed classification of the void blocks (Volume and surface: <7A(ultramicro), >7 and <20 (micro), meso etc.)
- t0 = OMP_GET_WTIME()
+! t0 = OMP_GET_WTIME()
  call Input(dMesh,nR,nP,nAtm,AtmSym,IndCav,IndCon,DiamStep,RMin,MaxDiameter,Closed_Thresh,Print_xyz, &
                  surf_computation,RadS,RadAV,n_angles,versors,Accessible,IndSurf,Connect,density,cross_section,molecular_mass)
- t1 = OMP_GET_WTIME()
- write(6,'("Time of input: ",f12.6)') t1-t0
+! t1 = OMP_GET_WTIME()
+! write(6,'("Time of input: ",f12.6)') t1-t0
 
 !DEBUG_surface_gas--------------------------------------------------------------------
 ! write(6,'("RadS = ",f12.6)') RadS
@@ -163,12 +163,12 @@ program pore_local_analysis
  !DEBUG___Nthreads________________________
  !$OMP PARALLEL
  !$OMP SINGLE
- write(6,'("OpenMP threads:",i6)') OMP_GET_NUM_THREADS()
+ !write(6,'("OpenMP threads:",i6)') OMP_GET_NUM_THREADS()
  !$OMP END SINGLE
  !$OMP END PARALLEL
  !DEBUG___Nthreads________________________
 
- t0 = OMP_GET_WTIME()
+ !t0 = OMP_GET_WTIME()
  !$OMP PARALLEL DO DEFAULT(SHARED) &
  !$OMP PRIVATE(iP,i,iC,XCub,YCub,ZCub,iPN,iPNopp) &
  !$OMP PRIVATE(dX,dY,dZ,R,RMin_temp,RMax,RN,Ropp,Found) &
@@ -290,8 +290,8 @@ program pore_local_analysis
 
  end do
  !$OMP END PARALLEL DO
- t1 = OMP_GET_WTIME()
- write(6,'("Time of main loop: ",f12.6)') t1-t0
+ !t1 = OMP_GET_WTIME()
+ !write(6,'("Time of main loop: ",f12.6)') t1-t0
 
 !---------------------DEBUG_WRITE_MinD_IN_FILE--------------
 ! close(1)
@@ -300,40 +300,40 @@ program pore_local_analysis
 !---------- DEBUG_ALL_DIST_11-06-2026-----------------
 ! close(2)
 !---------- DEBUG_ALL_DIST_11-06-2026-----------------
-
- t0 = OMP_GET_WTIME()
+!
+! t0 = OMP_GET_WTIME()
 ! Compute skeletal density
  call Skel_Dens(dMesh,nP,IndCav,nAtm,AtmSym,SkV,SkM,SkD)
- t1 = OMP_GET_WTIME()
- write(6,'("Time of skel dens: ",f12.6)') t1-t0
+! t1 = OMP_GET_WTIME()
+! write(6,'("Time of skel dens: ",f12.6)') t1-t0
 
- t0 = OMP_GET_WTIME()
+! t0 = OMP_GET_WTIME()
  ! Compute specific surface
  call Surface(Surf_Computation,dMesh,nR,nP,RadS,nMono_dens,IndSurf,density,molecular_mass) 
- t1 = OMP_GET_WTIME()
- write(6,'("Time of surface: ",f12.6)') t1-t0
+! t1 = OMP_GET_WTIME()
+! write(6,'("Time of surface: ",f12.6)') t1-t0
 
- t0 = OMP_GET_WTIME()
+! t0 = OMP_GET_WTIME()
  call Texture(nP,dMesh,nVol,DiamStep,VMinD,Cumulative_VMinD,UltraV,MicroV,SmallMesoV,LargeMesoV,MacroV,TotPorV,nR,iM1,iM2,&     
       surf_computation,DistMin,UltraS,MicroS,SmallMesoS,LargeMesoS,MacroS,RadAV,IndCav,Surf,Accessible,IndSurf,IndCon,Connect)
- t1 = OMP_GET_WTIME()
- write(6,'("Time of texture: ",f12.6)') t1-t0
+! t1 = OMP_GET_WTIME()
+! write(6,'("Time of texture: ",f12.6)') t1-t0
 
- t0 = OMP_GET_WTIME()
+! t0 = OMP_GET_WTIME()
 ! Find connectivity
  if (Connect.gt.0) then
     call Connectivity(IndCon,nR,dMesh,nP)
  end if
- t1 = OMP_GET_WTIME()
- write(6,'("Time of connectivity: ",f12.6)') t1-t0
+! t1 = OMP_GET_WTIME()
+! write(6,'("Time of connectivity: ",f12.6)') t1-t0
 
- t0 = OMP_GET_WTIME()
+! t0 = OMP_GET_WTIME()
 ! Write the results
  call Output(dMesh,nR,nP,nVol,IndCav,DiamStep,Cumulative_VMinD,VMinD,Accessible, &
              UltraV,MicroV,SmallMesoV,LargeMesoV,MacroV,TotPorV,SkV,SkM,SkD,Print_xyz, &
              RadS,surf_computation,UltraS,MicroS,SmallMesoS,LargeMesoS,MacroS,nMono_dens,density,molecular_mass,cross_section)
- t1 = OMP_GET_WTIME()
- write(6,'("Time of output: ",f12.6)') t1-t0
+! t1 = OMP_GET_WTIME()
+! write(6,'("Time of output: ",f12.6)') t1-t0
  stop
  end
 
