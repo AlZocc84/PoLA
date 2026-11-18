@@ -168,7 +168,7 @@ program pore_local_analysis
  !$OMP END PARALLEL
  !DEBUG___Nthreads________________________
 
- !t0 = OMP_GET_WTIME()
+! t0 = OMP_GET_WTIME()
  !$OMP PARALLEL DO DEFAULT(SHARED) &
  !$OMP PRIVATE(iP,i,iC,XCub,YCub,ZCub,iPN,iPNopp) &
  !$OMP PRIVATE(dX,dY,dZ,R,RMin_temp,RMax,RN,Ropp,Found) &
@@ -290,8 +290,8 @@ program pore_local_analysis
 
  end do
  !$OMP END PARALLEL DO
- !t1 = OMP_GET_WTIME()
- !write(6,'("Time of main loop: ",f12.6)') t1-t0
+! t1 = OMP_GET_WTIME()
+! write(6,'("Time of main loop: ",f12.6)') t1-t0
 
 !---------------------DEBUG_WRITE_MinD_IN_FILE--------------
 ! close(1)

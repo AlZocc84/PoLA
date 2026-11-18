@@ -155,13 +155,10 @@ subroutine Connectivity(IndCon,nR,dMesh,nP)
         iPi = iM2*(ZCub-1) + iM1*(YCub-1) + 1
         iPj = iM2*(ZCub-1) + iM1*(YCub-1) + nR(1)
         if((IndCon(iPi).lt.0).or.(IndCon(iPJ).lt.0)) cycle
-
         ! Check the value of IndCav
         ! if the two blocks have the same indcon, it's ok, it's already the same pore
         ! so in the new array the index of the pore will be unchanged
-        if(IndCon(iPi).eq.IndCon(iPj)) then
-           NewInd(IndCon(iPi)) = IndCon(iPi)
-        else
+        if(IndCon(iPi).ne.IndCon(iPj)) then
            lower = min(IndCon(iPi),IndCon(iPj))
            higher = max(IndCon(iPi),IndCon(iPj))
            ! we want to check if the pore with the lower indCon has already been merged with another pore
@@ -193,6 +190,8 @@ subroutine Connectivity(IndCon,nR,dMesh,nP)
 
     end do
  end do
+
+
  ! Analizing the Y face:
  do ZCub = 1, nR(3)
     do XCub = 1, nR(1)
@@ -203,9 +202,7 @@ subroutine Connectivity(IndCon,nR,dMesh,nP)
         ! Check the value of IndCav
         ! if the two blocks have the same indcon, it's ok, it's already the same pore
         ! so in the new array the index of the pore will be unchanged
-        if(IndCon(iPi).eq.IndCon(iPj)) then
-           NewInd(IndCon(iPi)) = IndCon(iPi)
-        else
+        if(IndCon(iPi).ne.IndCon(iPj)) then
            lower = min(IndCon(iPi),IndCon(iPj))
            higher = max(IndCon(iPi),IndCon(iPj))
            ! we want to check if the pore with the lower indCon has already been merged with another pore
@@ -237,6 +234,7 @@ subroutine Connectivity(IndCon,nR,dMesh,nP)
 
     end do
  end do
+
    
  ! Analizing the Z face:
  do YCub = 1, nR(2)
@@ -248,9 +246,7 @@ subroutine Connectivity(IndCon,nR,dMesh,nP)
         ! Check the value of IndCav
         ! if the two blocks have the same indcon, it's ok, it's already the same pore
         ! so in the new array the index of the pore will be unchanged
-        if(IndCon(iPi).eq.IndCon(iPj)) then
-           NewInd(IndCon(iPi)) = IndCon(iPi)
-        else
+        if(IndCon(iPi).ne.IndCon(iPj)) then
            lower = min(IndCon(iPi),IndCon(iPj))
            higher = max(IndCon(iPi),IndCon(iPj))
            ! we want to check if the pore with the lower indCon has already been merged with another pore
@@ -282,6 +278,7 @@ subroutine Connectivity(IndCon,nR,dMesh,nP)
 
     end do
  end do
+
 
  !Now change the value of IndCon and compute the volume of the pores
  do iP = 1, nP
@@ -345,15 +342,5 @@ subroutine Connectivity(IndCon,nR,dMesh,nP)
  
    end do
  close(3)
-
-!DEBUG--------------------------------------------------------
- do i = 1, NPore
- write(6,'(i3)') NewInd(i)
- end do
-
- do i = 1, NPore
- write(6,'(i3)') Updated_Index(i)
- end do
-!DEBUG--------------------------------------------------------
 
 end

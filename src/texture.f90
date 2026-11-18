@@ -240,6 +240,9 @@
  !$OMP END PARALLEL DO
 
 !  Fill VMinD array with the accessible volume  
+! !$OMP PARALLEL DO DEFAULT(NONE) &
+! !$OMP SHARED(nP,v_block,IndCav,NAccVol,DistMin,DiamStep,VMinD) &
+! !$OMP PRIVATE(iP,iVol,MinD) SCHEDULE(STATIC)
  do iP = 1,nP
    if(IndCav(iP).eq.0) then     ! At this point all blocks should have IndCav different from 0, otherwise there is an error and the program is stopped
      write(6,'("IndCav of block ",i20," is 0")') iP
@@ -256,10 +259,14 @@
      VMinD(iVol) = VMinD(iVol) + v_block 
    end if
  end do
+! !$OMP END PARALLEL DO
 
  ! Compute the volume of each classification (UltraMicro, Micro etc.)
  ! The UltraMicro volume is given by the ultramicro bulk (IndCav=9) and by the ACCESSIBLE volume of the ultamicro surface (IndCav=4 and not NaccVol)
  ! (and the same for all the other classifications)
+! !$OMP PARALLEL DO DEFAULT(NONE) &
+! !$OMP SHARED(nP,v_block,IndCav,NAccVol,UltraV,MicroV,SmallMesoV,LargeMesoV,MacroV) &
+! !$OMP PRIVATE(iP) SCHEDULE(STATIC)
  do iP= 1, nP
    if((IndCav(iP).eq.9).OR.(IndCav(iP).eq.4.AND.(.not.NaccVol(iP)))) then
      UltraV = UltraV + v_block    
@@ -273,7 +280,11 @@
      MacroV = MacroV + v_block    
    end if
  end do
+! !$OMP END PARALLEL DO
 
+! !$OMP PARALLEL DO DEFAULT(NONE) &
+! !$OMP SHARED(nP,v_block,IndCav,UltraS,MicroS,SmallMesoS,LargeMesoS,MacroS,Surf) &
+! !$OMP PRIVATE(iP,iVol) SCHEDULE(STATIC)
  do iP= 1, nP
  ! Compute the surface volume of each classification (UltraMicro, Micro etc.)
  !  And Surf(iVol) is filled
@@ -294,6 +305,7 @@
      Surf(iVol) = Surf(iVol) + v_block
    end if
  end do
+! !$OMP END PARALLEL DO
 
   ! compute the total volume and the Cumulative VMinD
  do iVol = 1, nVol

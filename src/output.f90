@@ -32,17 +32,17 @@
 
 ! If required, print the porous structure, indicating filled, void, "closed" and surface blocks 
 ! IndCav, Nature of block
-!   1               filled                                     --> Ar
-!   2               excluded because too small                 --> Kr
-!   3               Non Accessible volume                      --> He
-!   4-5-6-7-8       surf                                       --> Ne
-!   9-10-11-12-13   vol                                        --> Xe
+!   1               filled                                     --> Material
+!   2               excluded because too small                 --> Excluded
+!   3               Non Accessible volume                      --> NotAccessible
+!   4-5-6-7-8       surf                                       --> Surface
+!   9-10-11-12-13   vol                                        --> Bulk
  if (Print_xyz.eq.1) then
-   write(2,'("Filled                       --> Ar  ")')
-   write(2,'("Excluded because too small   --> Kr  ")')
-   write(2,'("Non Accessible volume        --> He  ")')
-   write(2,'("Surf                         --> Ne  ")')
-   write(2,'("Vol                          --> Xe  ")')
+   write(2,'("Filled                       --> Material  ")')
+   write(2,'("Excluded because too small   --> Excluded  ")')
+   write(2,'("Non Accessible volume        --> NotAccessible  ")')
+   write(2,'("Surf                         --> Surface  ")')
+   write(2,'("Vol                          --> Bulk  ")')
    write(1,*)nP
    write(1,*)
    iM2 = nR(1)*nR(2)
@@ -54,35 +54,35 @@
      XX = dMesh*(XCub - 0.5)
      YY = dMesh*((YCub + 1) - 0.5)
      ZZ = dMesh*((ZCub + 1) - 0.5)
-     if(IndCav(iP).eq.1) write(1,'("Ar",3f12.6)')XX,YY,ZZ
-     if(IndCav(iP).eq.2) write(1,'("Kr",3f12.6)')XX,YY,ZZ
-     if(IndCav(iP).eq.3) write(1,'("He",3f12.6)')XX,YY,ZZ
-     if(IndCav(iP).ge.4.AND.IndCav(iP).le.8) write(1,'("Ne",3f12.6)')XX,YY,ZZ
-     if(IndCav(iP).ge.9.AND.IndCav(iP).le.13) write(1,'("Xe",3f12.6)')XX,YY,ZZ
+     if(IndCav(iP).eq.1) write(1,'("MATERIAL",3f12.6)')XX,YY,ZZ
+     if(IndCav(iP).eq.2) write(1,'("EXCLUDED",3f12.6)')XX,YY,ZZ
+     if(IndCav(iP).eq.3) write(1,'("NOTACC",3f12.6)')XX,YY,ZZ
+     if(IndCav(iP).ge.4.AND.IndCav(iP).le.8) write(1,'("SURFACE",3f12.6)')XX,YY,ZZ
+     if(IndCav(iP).ge.9.AND.IndCav(iP).le.13) write(1,'("BULK",3f12.6)')XX,YY,ZZ
    end do
  end if
 
 ! If a more detailed structure is required, indicate with different elements the nature of the voids
 ! (in this case, don't signal the surface blocks)
 ! IndCav, Nature of block
-!   1         filled                                     --> Ar
-!   2         excluded because too small                 --> Ar
-!   3         Non Accessible volume                      --> He
-!   4-9    surf and vol ultramicro (Rmin < 7 A)       --> Ne
-!   5-10   surf and vol micro (7 < Rmin < 20 A)       --> Kr
-!   6-11   surf and vol small meso (20 < Rmin < 35 A) --> Xe
-!   7-12   surf and vol large meso (35 < Rmin < 50 A) --> Rn
-!   8-13   surf and vol macro (Rmin > 50 A)           --> Ca
+!   1         filled                                     --> MATERIAL
+!   2         excluded because too small                 --> MATERIAL
+!   3         Non Accessible volume                      --> NOTACC
+!   4-9    surf and vol ultramicro (Rmin < 7 A)       --> UMICRO
+!   5-10   surf and vol micro (7 < Rmin < 20 A)       --> MICRO
+!   6-11   surf and vol small meso (20 < Rmin < 35 A) --> SMESO
+!   7-12   surf and vol large meso (35 < Rmin < 50 A) --> LMESO
+!   8-13   surf and vol macro (Rmin > 50 A)           --> MACRO
 
  if (Print_xyz.eq.2) then
-   write(2,'("Filled                                     --> Ar   ")')
-   write(2,'("Excluded because too small                 --> Ar   ")')
-   write(2,'("Non Accessible volume                      --> He   ")')
-   write(2,'("Surf and vol ultramicro (Rmin < 7 A)       --> Ne   ")')
-   write(2,'("Surf and vol micro (7 < Rmin < 20 A)       --> Kr   ")')
-   write(2,'("Surf and vol small meso (20 < Rmin < 35 A) --> Xe   ")')
-   write(2,'("Surf and vol large meso (35 < Rmin < 50 A) --> Rn   ")')
-   write(2,'("Surf and vol macro (Rmin > 50 A)           --> Ca   ")')
+   write(2,'("Filled                                     --> MATERIAL   ")')
+   write(2,'("Excluded because too small                 --> MATERIAL   ")')
+   write(2,'("Non Accessible volume                      --> NOTACC   ")')
+   write(2,'("Surf and vol ultramicro (Rmin < 7 A)       --> UMICRO   ")')
+   write(2,'("Surf and vol micro (7 < Rmin < 20 A)       --> MICRO   ")')
+   write(2,'("Surf and vol small meso (20 < Rmin < 35 A) --> SMESO   ")')
+   write(2,'("Surf and vol large meso (35 < Rmin < 50 A) --> LMESO   ")')
+   write(2,'("Surf and vol macro (Rmin > 50 A)           --> MACRO   ")')
    write(1,*)nP
    write(1,*)
    iM2 = nR(1)*nR(2)
@@ -94,48 +94,48 @@
      XX = dMesh*(XCub - 0.5)
      YY = dMesh*((YCub + 1) - 0.5)
      ZZ = dMesh*((ZCub + 1) - 0.5)
-     if(IndCav(iP).eq.1) write(1,'("Ar",3f12.6)')XX,YY,ZZ
-     if(IndCav(iP).eq.2) write(1,'("Ar",3f12.6)')XX,YY,ZZ
-     if(IndCav(iP).eq.3) write(1,'("He",3f12.6)')XX,YY,ZZ
-     if(IndCav(iP).eq.4.OR.IndCav(iP).eq.9.OR.IndCav(iP).eq.14) write(1,'("Ne",3f12.6)')XX,YY,ZZ
-     if(IndCav(iP).eq.5.OR.IndCav(iP).eq.10.OR.IndCav(iP).eq.15) write(1,'("Kr",3f12.6)')XX,YY,ZZ
-     if(IndCav(iP).eq.6.OR.IndCav(iP).eq.11.OR.IndCav(iP).eq.16) write(1,'("Xe",3f12.6)')XX,YY,ZZ
-     if(IndCav(iP).eq.7.OR.IndCav(iP).eq.12.OR.IndCav(iP).eq.17) write(1,'("Rn",3f12.6)')XX,YY,ZZ
-     if(IndCav(iP).eq.8.OR.IndCav(iP).eq.13.OR.IndCav(iP).eq.18) write(1,'("Ca",3f12.6)')XX,YY,ZZ
+     if(IndCav(iP).eq.1) write(1,'("MATERIAL",3f12.6)')XX,YY,ZZ
+     if(IndCav(iP).eq.2) write(1,'("MATERIAL",3f12.6)')XX,YY,ZZ
+     if(IndCav(iP).eq.3) write(1,'("NOTACC",3f12.6)')XX,YY,ZZ
+     if(IndCav(iP).eq.4.OR.IndCav(iP).eq.9.OR.IndCav(iP).eq.14) write(1,'("UMICRO",3f12.6)')XX,YY,ZZ
+     if(IndCav(iP).eq.5.OR.IndCav(iP).eq.10.OR.IndCav(iP).eq.15) write(1,'("MICRO",3f12.6)')XX,YY,ZZ
+     if(IndCav(iP).eq.6.OR.IndCav(iP).eq.11.OR.IndCav(iP).eq.16) write(1,'("SMESO",3f12.6)')XX,YY,ZZ
+     if(IndCav(iP).eq.7.OR.IndCav(iP).eq.12.OR.IndCav(iP).eq.17) write(1,'("LMESO",3f12.6)')XX,YY,ZZ
+     if(IndCav(iP).eq.8.OR.IndCav(iP).eq.13.OR.IndCav(iP).eq.18) write(1,'("MACRO",3f12.6)')XX,YY,ZZ
    end do
  end if
 
 ! If a complete and detailed structure is required, indicate with different elements the nature of the voids
 ! in this case, signal the surface blocks
 ! IndCav , Nature of block
-!   1      filled                             --> Ar
-!   2      excluded because too small         --> Ar
-!   3      Non Accessible volume              --> Kr
-!   4      surf ultramicro (Rmin < 7 A)       --> Li
-!   5      surf micro (7 < Rmin < 20 A)       --> Na
-!   6      surf small meso (20 < Rmin < 35 A) --> K 
-!   7      surf large meso (35 < Rmin < 50 A) --> Rb
-!   8      surf macro (Rmin > 50 A)           --> Cs
-!   9      vol ultramicro (Rmin < 7 A)        --> Be
-!   10     vol micro (7 < Rmin < 20 A)        --> Mg
-!   11     vol small meso (20 < Rmin < 35 A)  --> Ca
-!   12     vol large meso (35 < Rmin < 50 A)  --> Sr
+!   1      filled                             --> MATERIAL
+!   2      excluded because too small         --> MATERIAL
+!   3      Non Accessible volume              --> NOTACC
+!   4      surf ultramicro (Rmin < 7 A)       --> UMICROS
+!   5      surf micro (7 < Rmin < 20 A)       --> MICROS
+!   6      surf small meso (20 < Rmin < 35 A) --> SMESOS 
+!   7      surf large meso (35 < Rmin < 50 A) --> SMESOS
+!   8      surf macro (Rmin > 50 A)           --> MACROS
+!   9      vol ultramicro (Rmin < 7 A)        --> UMICROV
+!   10     vol micro (7 < Rmin < 20 A)        --> MICROV
+!   11     vol small meso (20 < Rmin < 35 A)  --> CSMESOS
+!   12     vol large meso (35 < Rmin < 50 A)  --> SMESOS
 !   13     vol macro (Rmin > 50 A)            --> Ba
 
  if (Print_xyz.eq.3) then
-   write(2,'("Filled                             --> Ar   ")')
-   write(2,'("Excluded because too small         --> Ar   ")')
-   write(2,'("Non Accessible volume              --> Kr   ")')
-   write(2,'("Surf ultramicro (Rmin < 7 A)       --> Li   ")')
-   write(2,'("Surf micro (7 < Rmin < 20 A)       --> Na   ")')
-   write(2,'("Surf small meso (20 < Rmin < 35 A) --> K    ")')
-   write(2,'("Surf large meso (35 < Rmin < 50 A) --> Rb   ")')
-   write(2,'("Surf macro (Rmin > 50 A)           --> Cs   ")')
-   write(2,'("Vol ultramicro (Rmin < 7 A)        --> Be   ")')
-   write(2,'("Vol micro (7 < Rmin < 20 A)        --> Mg   ")')
-   write(2,'("Vol small meso (20 < Rmin < 35 A)  --> Ca   ")')
-   write(2,'("Vol large meso (35 < Rmin < 50 A)  --> Sr   ")')
-   write(2,'("Vol macro (Rmin > 50 A)            --> Ba   ")')
+   write(2,'("Filled                             --> MATERIAL   ")')
+   write(2,'("Excluded because too small         --> MATERIAL   ")')
+   write(2,'("Non Accessible volume              --> NOTACC   ")')
+   write(2,'("Surf ultramicro (Rmin < 7 A)       --> UMICROS   ")')
+   write(2,'("Surf micro (7 < Rmin < 20 A)       --> MICROS   ")')
+   write(2,'("Surf small meso (20 < Rmin < 35 A) --> SMESOS    ")')
+   write(2,'("Surf large meso (35 < Rmin < 50 A) --> LMESOS   ")')
+   write(2,'("Surf macro (Rmin > 50 A)           --> MACROS   ")')
+   write(2,'("Vol ultramicro (Rmin < 7 A)        --> UMICROV   ")')
+   write(2,'("Vol micro (7 < Rmin < 20 A)        --> MICROV   ")')
+   write(2,'("Vol small meso (20 < Rmin < 35 A)  --> SMESOV   ")')
+   write(2,'("Vol large meso (35 < Rmin < 50 A)  --> LMESOV   ")')
+   write(2,'("Vol macro (Rmin > 50 A)            --> MACROV   ")')
    write(1,*)nP
    write(1,*)
    iM2 = nR(1)*nR(2)
@@ -148,31 +148,31 @@
      YY = dMesh*((YCub + 1) - 0.5)
      ZZ = dMesh*((ZCub + 1) - 0.5)
      if(IndCav(iP).eq.1) then
-        write(1,'("Ar",3f12.6)')XX,YY,ZZ
+        write(1,'("MATERIAL",3f12.6)')XX,YY,ZZ
      elseif(IndCav(iP).eq.2) then
-        write(1,'("Ar",3f12.6)')XX,YY,ZZ
+        write(1,'("MATERIAL",3f12.6)')XX,YY,ZZ
      elseif(IndCav(iP).eq.3) then
-        write(1,'("Kr",3f12.6)')XX,YY,ZZ
+        write(1,'("NOTACC",3f12.6)')XX,YY,ZZ
      elseif(IndCav(iP).eq.4) then
-        write(1,'("Li",3f12.6)')XX,YY,ZZ
+        write(1,'("UMICROS",3f12.6)')XX,YY,ZZ
      elseif(IndCav(iP).eq.5) then
-        write(1,'("Na",3f12.6)')XX,YY,ZZ
+        write(1,'("MICROS",3f12.6)')XX,YY,ZZ
      elseif(IndCav(iP).eq.6) then
-        write(1,'("K",3f12.6)')XX,YY,ZZ
+        write(1,'("SMESOS",3f12.6)')XX,YY,ZZ
      elseif(IndCav(iP).eq.7) then
-        write(1,'("Rb",3f12.6)')XX,YY,ZZ
+        write(1,'("LMESOS",3f12.6)')XX,YY,ZZ
      elseif(IndCav(iP).eq.8) then
-        write(1,'("Cs",3f12.6)')XX,YY,ZZ
+        write(1,'("MACROS",3f12.6)')XX,YY,ZZ
      elseif(IndCav(iP).eq.9) then
-        write(1,'("Be",3f12.6)')XX,YY,ZZ
+        write(1,'("UMICROV",3f12.6)')XX,YY,ZZ
      elseif(IndCav(iP).eq.10) then
-        write(1,'("Mg",3f12.6)')XX,YY,ZZ
+        write(1,'("MICROV",3f12.6)')XX,YY,ZZ
      elseif(IndCav(iP).eq.11) then
-        write(1,'("Ca",3f12.6)')XX,YY,ZZ
+        write(1,'("SMESOV",3f12.6)')XX,YY,ZZ
      elseif(IndCav(iP).eq.12) then
-        write(1,'("Sr",3f12.6)')XX,YY,ZZ
+        write(1,'("LMESOV",3f12.6)')XX,YY,ZZ
      elseif(IndCav(iP).eq.13) then
-        write(1,'("Ba",3f12.6)')XX,YY,ZZ
+        write(1,'("MACROV",3f12.6)')XX,YY,ZZ
      else
         write(1,'("UK",3f12.6)')XX,YY,ZZ
      end if
