@@ -13,7 +13,7 @@ subroutine Connectivity(IndCon,nR,dMesh,nP)
  INTEGER, INTENT(IN) :: nP
  REAL(DP), INTENT(IN) :: dMesh
  
- INTEGER :: iM1, iM2, XCub, YCub, ZCub, V, iP, iC, Npore, iPNew, indexP, count_pore, higher, lower, i, iPi, iPj
+ INTEGER :: iM1, iM2, XCub, YCub, ZCub, V, iP, iC, Npore, iPNew, indexP, count_pore, i, iPi, iPj
  REAL(DP) :: XX, YY, ZZ
 
  INTERFACE
@@ -22,6 +22,12 @@ subroutine Connectivity(IndCon,nR,dMesh,nP)
      INTEGER, DIMENSION(3), INTENT(IN) :: nR
      INTEGER, INTENT(IN) :: iP, Npore
      INTEGER, INTENT(OUT) :: V
+   END SUBROUTINE
+   SUBROUTINE checkface(iPi,iPj,nP,NPore,IndCon,NewInd,Reachable)
+     INTEGER, DIMENSION(:), INTENT(INOUT) :: NewInd
+     LOGICAL, DIMENSION(:), INTENT(INOUT) :: Reachable
+     INTEGER, DIMENSION(:), INTENT(IN) :: IndCon
+     INTEGER, INTENT(IN) :: nP, iPi, iPj, NPore
    END SUBROUTINE
 
  END INTERFACE
@@ -155,42 +161,11 @@ subroutine Connectivity(IndCon,nR,dMesh,nP)
         iPi = iM2*(ZCub-1) + iM1*(YCub-1) + 1
         iPj = iM2*(ZCub-1) + iM1*(YCub-1) + nR(1)
         if((IndCon(iPi).lt.0).or.(IndCon(iPJ).lt.0)) cycle
-        ! Check the value of IndCav
-        ! if the two blocks have the same indcon, it's ok, it's already the same pore
-        ! so in the new array the index of the pore will be unchanged
-        if(IndCon(iPi).ne.IndCon(iPj)) then
-           lower = min(IndCon(iPi),IndCon(iPj))
-           higher = max(IndCon(iPi),IndCon(iPj))
-           ! we want to check if the pore with the lower indCon has already been merged with another pore
-           ! in thi case the NewIndCon of the higher indCon will be IndCon(min)
-           ! for example: IndCon(iPi) = 3
-           ! IndCon(iPj) = 8
-           ! if NewInd(3) is 3 that means that the pore 3 is not merged with another pore
-           ! So we can merge pore 8 and 3 in the pore n.3, so NewInd(8) = 3
-           ! istead
-           ! if NewInd(3) is different from 3 that means that the pore 3 is merged with another pore (e.g 1)
-           ! So also the pore 8 will be merged with the pore e.g. 1
-           
-           if(NewInd(lower).eq.lower) then
-             NewInd(higher) = lower
-           else
-             NewInd(higher) = NewInd(lower)
-           end if
 
-           ! Now we need to check if there were some pores already merged with the higher, 
-           ! and in that case merge it with the lower
-           do i = higher, Npore
-              if (NewInd(i).eq.higher) NewInd(i) = lower
-           end do
-           
-           ! We need to update the Reachable value:
-           ! If we merge the pore 3 and 8, if one of the two is accessible, then the merged pore will also be accessible
-           if(Reachable(lower).or.Reachable(higher)) Reachable(lower) = .True.
-        end if
+        call checkface(iPi,iPj,nP,NPore,IndCon,NewInd,Reachable)
 
     end do
  end do
-
 
  ! Analizing the Y face:
  do ZCub = 1, nR(3)
@@ -199,43 +174,12 @@ subroutine Connectivity(IndCon,nR,dMesh,nP)
         iPi = iM2*(ZCub-1) + XCub
         iPj = iM2*(ZCub-1) + iM1*(nR(2)-1) + XCub
         if((IndCon(iPi).lt.0).or.(IndCon(iPJ).lt.0)) cycle
-        ! Check the value of IndCav
-        ! if the two blocks have the same indcon, it's ok, it's already the same pore
-        ! so in the new array the index of the pore will be unchanged
-        if(IndCon(iPi).ne.IndCon(iPj)) then
-           lower = min(IndCon(iPi),IndCon(iPj))
-           higher = max(IndCon(iPi),IndCon(iPj))
-           ! we want to check if the pore with the lower indCon has already been merged with another pore
-           ! in thi case the NewIndCon of the higher indCon will be IndCon(min)
-           ! for example: IndCon(iPi) = 3
-           ! IndCon(iPj) = 8
-           ! if NewInd(3) is 3 that means that the pore 3 is not merged with another pore
-           ! So we can merge pore 8 and 3 in the pore n.3, so NewInd(8) = 3
-           ! istead
-           ! if NewInd(3) is different from 3 that means that the pore 3 is merged with another pore (e.g 1)
-           ! So also the pore 8 will be merged with the pore e.g. 1
-           
-           if(NewInd(lower).eq.lower) then
-             NewInd(higher) = lower
-           else
-             NewInd(higher) = NewInd(lower)
-           end if
 
-           ! Now we need to check if there were some pores already merged with the higher, 
-           ! and in that case merge it with the lower
-           do i = higher, Npore
-              if (NewInd(i).eq.higher) NewInd(i) = lower
-           end do
-           ! We need to update the Reachable value:
-           ! If we merge the pore 3 and 8, if one of the two is accessible, then the merged pore will also be accessible
-           if(Reachable(lower).or.Reachable(higher)) Reachable(lower) = .True.
-
-        end if
+        call checkface(iPi,iPj,nP,NPore,IndCon,NewInd,Reachable)
 
     end do
  end do
 
-   
  ! Analizing the Z face:
  do YCub = 1, nR(2)
     do XCub = 1, nR(1)
@@ -243,56 +187,15 @@ subroutine Connectivity(IndCon,nR,dMesh,nP)
         iPi = iM1*(YCub-1) + XCub
         iPj = iM2*(nR(3)-1) + iM1*(YCub-1) + XCub
         if((IndCon(iPi).lt.0).or.(IndCon(iPJ).lt.0)) cycle
-        ! Check the value of IndCav
-        ! if the two blocks have the same indcon, it's ok, it's already the same pore
-        ! so in the new array the index of the pore will be unchanged
-        if(IndCon(iPi).ne.IndCon(iPj)) then
-           lower = min(IndCon(iPi),IndCon(iPj))
-           higher = max(IndCon(iPi),IndCon(iPj))
-           ! we want to check if the pore with the lower indCon has already been merged with another pore
-           ! in thi case the NewIndCon of the higher indCon will be IndCon(min)
-           ! for example: IndCon(iPi) = 3
-           ! IndCon(iPj) = 8
-           ! if NewInd(3) is 3 that means that the pore 3 is not merged with another pore
-           ! So we can merge pore 8 and 3 in the pore n.3, so NewInd(8) = 3
-           ! istead
-           ! if NewInd(3) is different from 3 that means that the pore 3 is merged with another pore (e.g 1)
-           ! So also the pore 8 will be merged with the pore e.g. 1
-           
-           if(NewInd(lower).eq.lower) then
-             NewInd(higher) = lower
-           else
-             NewInd(higher) = NewInd(lower)
-           end if
 
-           ! Now we need to check if there were some pores already merged with the higher, 
-           ! and in that case merge it with the lower
-           do i = higher, Npore
-              if (NewInd(i).eq.higher) NewInd(i) = lower
-           end do
-           ! We need to update the Reachable value:
-           ! If we merge the pore 3 and 8, if one of the two is accessible, then the merged pore will also be accessible
-           if(Reachable(lower).or.Reachable(higher)) Reachable(lower) = .True.
-
-        end if
+        call checkface(iPi,iPj,nP,NPore,IndCon,NewInd,Reachable)
 
     end do
  end do
 
-
  !Now change the value of IndCon and compute the volume of the pores
  do iP = 1, nP
    if(IndCon(iP).lt.0) cycle
-   !DEBUG----------------------------------
-   if(NewInd(IndCon(iP)).le.0) then
-
-     write(6,'("ERROR")')
-     write(6,'("iP: ",i20)') iP
-     write(6,'("IndCon(iP): ",i20)') IndCon(iP)
-     write(6,'("NewInd(IndCon(iP)): ",i20)') NewInd(IndCon(iP))
-
-   end if
-   !DEBUG----------------------------------
    Volumes(NewInd(IndCon(iP))) = Volumes(NewInd(IndCon(iP))) + dMesh*dMesh*dMesh
    IndCon(iP) = NewInd(IndCon(iP)) 
  end do
@@ -307,10 +210,10 @@ subroutine Connectivity(IndCon,nR,dMesh,nP)
     count_pore = count_pore + 1
     Updated_Index(indexP) = count_pore
     if(Reachable(indexP)) then
-      write(1,'("Found the channel ",i0," with volume ",f12.6)') count_pore, Volumes(IndexP)
+      write(1,'("Found the channel ",i0," with volume ",f15.2)') count_pore, (Volumes(IndexP)+1)
       write(2,'("Channel ",i0," REACHABLE")') count_pore
     else
-      write(1,'("Found the pore ",i0," with volume ",f12.6)') count_pore, Volumes(IndexP)
+      write(1,'("Found the pore ",i0," with volume ",f15.2)') count_pore, (Volumes(IndexP)+1)
       write(2,'("Pore ",i0," NOT REACHABLE")') count_pore
     end if
  end do
